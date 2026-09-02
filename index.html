@@ -190,6 +190,17 @@
     margin-bottom: 22px;
   }
   .hero-role::before { content: '// '; color: var(--muted); }
+  .hero-role #role-rotator { display: inline-block; transition: opacity 0.35s ease; }
+  .hero-role #role-rotator.fade { opacity: 0; }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 
   .hero h1 {
     font-family: 'Archivo', sans-serif;
@@ -592,7 +603,10 @@
       </div>
     </div>
     <div>
-      <div class="hero-role">DevOps Engineer / Site Reliability Engineer</div>
+      <div class="hero-role">
+        <span class="sr-only">DevOps Engineer / Site Reliability Engineer</span>
+        <span id="role-rotator" aria-hidden="true">DevOps Engineer</span>
+      </div>
       <h1>I keep deployments boring and incidents short.</h1>
       <p class="hero-blurb">
         Two-plus years building CI/CD pipelines, automating operational workflows, and resolving
@@ -799,6 +813,20 @@
         toggle.setAttribute('aria-expanded', 'false');
       }
     });
+
+    var roles = ['DevOps Engineer', 'Site Reliability Engineer'];
+    var roleEl = document.getElementById('role-rotator');
+    var roleIndex = 0;
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setInterval(function () {
+        roleEl.classList.add('fade');
+        setTimeout(function () {
+          roleIndex = (roleIndex + 1) % roles.length;
+          roleEl.textContent = roles[roleIndex];
+          roleEl.classList.remove('fade');
+        }, 350);
+      }, 2600);
+    }
   })();
 </script>
 </body>
