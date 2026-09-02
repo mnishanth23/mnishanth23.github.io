@@ -117,6 +117,30 @@
   .navlinks a:hover { opacity: 1; color: var(--accent); }
   .navlinks a:hover::after { transform: scaleX(1); transform-origin: left; }
 
+  .nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 34px;
+    height: 34px;
+    background: none;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    padding: 0;
+  }
+  .nav-toggle span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    margin: 0 auto;
+    background: var(--text);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
   .resume-btn {
     background: var(--accent);
     color: var(--bg) !important;
@@ -460,6 +484,25 @@
 
   /* ---------- Responsive ---------- */
   @media (max-width: 760px) {
+    .nav-toggle { display: flex; }
+    .navlinks {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      gap: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 0;
+    }
+    .navlinks.open { display: flex; }
+    .navlinks li { width: 100%; }
+    .navlinks a { display: block; padding: 14px 32px; opacity: 1; }
+    .navlinks a::after { display: none; }
+    .navlinks .resume-btn { margin: 8px 32px; text-align: center; }
+    nav.wrap { position: relative; }
     .hero { grid-template-columns: 1fr; }
     .hero-banner-wrap { order: -1; max-width: 220px; }
     .stats { grid-template-columns: repeat(2, 1fr); }
@@ -499,7 +542,10 @@
 <header>
   <nav class="wrap">
     <div class="logo"><img src="logo.png" alt="Nishanth M" class="logo-mark"> Nishanth <span>M</span></div>
-    <ul class="navlinks">
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navlinks">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="navlinks" id="navlinks">
       <li><a href="#experience">Experience</a></li>
       <li><a href="#projects">Projects</a></li>
       <li><a href="#about">About</a></li>
@@ -713,5 +759,27 @@
   © 2026 Nishanth M — DevOps Engineer &amp; Site Reliability Engineer
 </footer>
 
+<script>
+  (function () {
+    var toggle = document.querySelector('.nav-toggle');
+    var links = document.getElementById('navlinks');
+    toggle.addEventListener('click', function () {
+      var open = links.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open);
+    });
+    links.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A') {
+        links.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 760) {
+        links.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  })();
+</script>
 </body>
 </html>
