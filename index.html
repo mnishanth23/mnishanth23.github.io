@@ -279,26 +279,54 @@
   }
 
   /* ---------- Experience timeline ---------- */
-  .timeline { display: flex; flex-direction: column; }
+  .company-header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+  .company-name {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 1.25rem;
+  }
+  .company-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: var(--muted); }
+
+  .timeline { position: relative; display: flex; flex-direction: column; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--line);
+  }
 
   .role-block {
-    display: grid;
-    grid-template-columns: 190px 1fr;
-    gap: 32px;
-    padding: 32px 12px;
-    margin: 0 -12px;
-    border-top: 1px solid var(--line);
-    transition: background 0.2s ease, padding-left 0.2s ease;
+    position: relative;
+    padding: 22px 0;
+    transition: padding-left 0.2s ease;
   }
-  .role-block:hover { background: var(--panel); padding-left: 24px; }
+  .role-block::before {
+    content: '';
+    position: absolute;
+    left: -28px;
+    top: 27px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent2);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .role-block:first-child { padding-top: 0; }
+  .role-block:first-child::before { top: 5px; }
+  .role-block:hover { padding-left: 10px; }
+  .role-block:hover::before { background: var(--accent); border-color: var(--accent); }
   .role-block:hover .role-title { color: var(--accent); }
-  .timeline .role-block:last-child { border-bottom: 1px solid var(--line); }
 
   .role-when {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.8rem;
     color: var(--accent);
-    padding-top: 2px;
+    margin-bottom: 12px;
   }
 
   .role-title {
@@ -310,7 +338,6 @@
     letter-spacing: 0.005em;
     transition: color 0.2s ease;
   }
-  .role-org { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
 
   .role-bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; }
   .role-bullets li {
@@ -506,7 +533,8 @@
     .hero { grid-template-columns: 1fr; }
     .hero-banner-wrap { order: -1; max-width: 220px; }
     .stats { grid-template-columns: repeat(2, 1fr); }
-    .role-block { grid-template-columns: 1fr; gap: 8px; }
+    .timeline { padding-left: 20px; }
+    .role-block::before { left: -20px; }
     .project-row { grid-template-columns: 1fr; }
     .project-tags { justify-content: flex-start; }
     .about-grid { grid-template-columns: 1fr; }
@@ -598,55 +626,47 @@
       <span class="idx">01</span>
       <h2>Experience</h2>
     </div>
+    <div class="company-header">
+      <div class="company-name">SMI Tech Group</div>
+      <div class="company-meta">Madurai, Tamil Nadu · Jul 2024 — Present</div>
+    </div>
     <div class="timeline">
       <div class="role-block">
-        <div class="role-when">JAN 2026 — PRESENT</div>
-        <div>
-          <div class="role-title">Associate DevOps Engineer</div>
-          <div class="role-org">SMI Tech Group, Madurai, Tamil Nadu</div>
-          <ul class="role-bullets">
-            <li>Reduced full customer environment provisioning from 2 days to 7–8 hours with end-to-end bash automation covering SSL, Docker/Compose, Karaf, Java, and Python installs across every environment tier</li>
-            <li>Held a zero-failure production deployment record across all customer releases by maintaining strict pipeline quality gates and pre-prod environment parity</li>
-            <li>Cut database provisioning to under 20 minutes by scripting containerised deployment of MongoDB, MariaDB, Redis, and PostgreSQL — eliminating manual DB setup</li>
-            <li>Migrated CI/CD tooling from Jenkins to Drone CI, improving pipeline maintainability and release reliability</li>
-            <li>Owned SOC 2 audit readiness end-to-end, tracking compliance and evidence collection in Sprinto</li>
-          </ul>
-        </div>
+        <div class="role-title">Associate DevOps Engineer</div>
+        <div class="role-when">Jan 2026 — Present</div>
+        <ul class="role-bullets">
+          <li>Reduced full customer environment provisioning from 2 days to 7–8 hours with end-to-end bash automation covering SSL, Docker/Compose, Karaf, Java, and Python installs across every environment tier</li>
+          <li>Held a zero-failure production deployment record across all customer releases by maintaining strict pipeline quality gates and pre-prod environment parity</li>
+          <li>Cut database provisioning to under 20 minutes by scripting containerised deployment of MongoDB, MariaDB, Redis, and PostgreSQL — eliminating manual DB setup</li>
+          <li>Migrated CI/CD tooling from Jenkins to Drone CI, improving pipeline maintainability and release reliability</li>
+          <li>Owned SOC 2 audit readiness end-to-end, tracking compliance and evidence collection in Sprinto</li>
+        </ul>
       </div>
       <div class="role-block">
-        <div class="role-when">JUN 2025 — DEC 2025</div>
-        <div>
-          <div class="role-title">Junior DevOps Engineer</div>
-          <div class="role-org">SMI Tech Group, Madurai, Tamil Nadu</div>
-          <ul class="role-bullets">
-            <li>Designed and maintained CI/CD pipelines for containerised application deployments, cutting manual intervention in the release process</li>
-            <li>Reduced repeat production incidents by leading structured root-cause analysis and turning findings into documented runbooks</li>
-            <li>Supported Docker-based deployment workflows to keep dev and staging environments consistent</li>
-          </ul>
-        </div>
+        <div class="role-title">Junior DevOps Engineer</div>
+        <div class="role-when">Jun 2025 — Dec 2025</div>
+        <ul class="role-bullets">
+          <li>Designed and maintained CI/CD pipelines for containerised application deployments, cutting manual intervention in the release process</li>
+          <li>Reduced repeat production incidents by leading structured root-cause analysis and turning findings into documented runbooks</li>
+          <li>Supported Docker-based deployment workflows to keep dev and staging environments consistent</li>
+        </ul>
       </div>
       <div class="role-block">
-        <div class="role-when">JAN 2025 — MAY 2025</div>
-        <div>
-          <div class="role-title">Site Reliability Engineer (Trainee)</div>
-          <div class="role-org">SMI Tech Group, Madurai, Tamil Nadu</div>
-          <ul class="role-bullets">
-            <li>Built standardised runbooks and operational documentation that cut time-to-acknowledge during incidents</li>
-            <li>Took part in on-call rotations, contributing operational improvements based on recurring incident patterns</li>
-          </ul>
-        </div>
+        <div class="role-title">Site Reliability Engineer (Trainee)</div>
+        <div class="role-when">Jan 2025 — May 2025</div>
+        <ul class="role-bullets">
+          <li>Built standardised runbooks and operational documentation that cut time-to-acknowledge during incidents</li>
+          <li>Took part in on-call rotations, contributing operational improvements based on recurring incident patterns</li>
+        </ul>
       </div>
       <div class="role-block">
-        <div class="role-when">JUL 2024 — DEC 2024</div>
-        <div>
-          <div class="role-title">Site Reliability Engineer (Intern)</div>
-          <div class="role-org">SMI Tech Group, Madurai, Tamil Nadu</div>
-          <ul class="role-bullets">
-            <li>Implemented end-to-end monitoring and alerting with Prometheus, Grafana, and the ELK Stack across production infrastructure</li>
-            <li>Built Python-based automation for log analysis, cutting manual log review effort</li>
-            <li>Automated SOC 2 audit evidence collection in Sprinto, reducing prep time per audit cycle</li>
-          </ul>
-        </div>
+        <div class="role-title">Site Reliability Engineer (Intern)</div>
+        <div class="role-when">Jul 2024 — Dec 2024</div>
+        <ul class="role-bullets">
+          <li>Implemented end-to-end monitoring and alerting with Prometheus, Grafana, and the ELK Stack across production infrastructure</li>
+          <li>Built Python-based automation for log analysis, cutting manual log review effort</li>
+          <li>Automated SOC 2 audit evidence collection in Sprinto, reducing prep time per audit cycle</li>
+        </ul>
       </div>
     </div>
   </section>
