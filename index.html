@@ -190,13 +190,15 @@
     margin-bottom: 22px;
   }
   .hero-role::before { content: '// '; color: var(--muted); }
-  .hero-role #role-rotator {
+  .hero-role #role-rotator { display: inline-block; }
+  .role-cursor {
     display: inline-block;
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: 2px;
+    color: var(--accent);
+    animation: role-blink 0.9s step-start infinite;
   }
-  .hero-role #role-rotator.fade { opacity: 0; transform: translateY(6px); }
+  @keyframes role-blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .role-cursor { display: none; } }
   .sr-only {
     position: absolute;
     width: 1px; height: 1px;
@@ -610,7 +612,7 @@
     <div>
       <div class="hero-role">
         <span class="sr-only">DevOps Engineer / Site Reliability Engineer</span>
-        <span id="role-rotator" aria-hidden="true">DevOps Engineer</span>
+        <span id="role-rotator" aria-hidden="true"></span><span class="role-cursor" aria-hidden="true">|</span>
       </div>
       <h1>I keep deployments boring and incidents short.</h1>
       <p class="hero-blurb">
@@ -822,19 +824,40 @@
     var roles = ['DevOps Engineer', 'Site Reliability Engineer'];
     var roleEl = document.getElementById('role-rotator');
     var roleIndex = 0;
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setInterval(function () {
-        roleEl.classList.add('fade');
-        setTimeout(function () {
+    var charIndex = 0;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      roleEl.textContent = roles[0];
+    } else {
+      var TYPE_SPEED = 55;
+      var ERASE_SPEED = 32;
+      var HOLD_TIME = 1500;
+      var NEXT_DELAY = 300;
+
+      function typeStep() {
+        var current = roles[roleIndex];
+        charIndex++;
+        roleEl.textContent = current.slice(0, charIndex);
+        if (charIndex < current.length) {
+          setTimeout(typeStep, TYPE_SPEED);
+        } else {
+          setTimeout(eraseStep, HOLD_TIME);
+        }
+      }
+
+      function eraseStep() {
+        var current = roles[roleIndex];
+        charIndex--;
+        roleEl.textContent = current.slice(0, charIndex);
+        if (charIndex > 0) {
+          setTimeout(eraseStep, ERASE_SPEED);
+        } else {
           roleIndex = (roleIndex + 1) % roles.length;
-          roleEl.textContent = roles[roleIndex];
-          roleEl.style.transition = 'none';
-          roleEl.style.transform = 'translateY(-6px)';
-          roleEl.offsetHeight;
-          roleEl.style.transition = '';
-          roleEl.classList.remove('fade');
-        }, 500);
-      }, 2800);
+          setTimeout(typeStep, NEXT_DELAY);
+        }
+      }
+
+      setTimeout(typeStep, NEXT_DELAY);
     }
   })();
 </script>
