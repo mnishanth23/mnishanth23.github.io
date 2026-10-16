@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x — Nishanth M</title>
+<meta name="description" content="Why you can’t jump straight to 8.x, what the 7.17 upgrade of dev Elasticsearch and Kibana involved, and what still has to happen before 8.x (that part isn’t done yet).">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph (absolute URLs: update SITE if you deploy elsewhere — see README) -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x — Nishanth M">
+<meta property="og:description" content="Why you can’t jump straight to 8.x, what the 7.17 upgrade of dev Elasticsearch and Kibana involved, and what still has to happen before 8.x (that part isn’t done yet).">
+<meta property="og:url" content="https://mnishanth23.github.io/blog/elasticsearch-7-11-to-7-17-upgrade.html">
+<meta property="og:image" content="https://mnishanth23.github.io/logo.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/site.css">
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+<meta property="article:published_time" content="2026-10-06">
+<meta property="article:author" content="Nishanth M">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="index.html" aria-current="page">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="index.html" aria-current="page"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+
+<!-- Reading progress bar (js/main.js section 7) -->
+<div class="progress" aria-hidden="true"><span></span></div>
+
+<!-- Blog post built from the template in blog/jenkins-to-drone-migration.html (BLOCK 1–8). -->
+<!-- Blog post built from the template in blog/jenkins-to-drone-migration.html (BLOCK 1–8). -->
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Blog</a></li>
+        <li><span aria-current="page">Elasticsearch 7.17 upgrade</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · POST HEADER: tags eyebrow, title (view transition), meta, byline -->
+    <header class="post-head">
+      <p class="eyebrow">Observability · Elasticsearch</p>
+      <h1 style="view-transition-name: post-elasticsearch-7-11-to-7-17-upgrade">Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x</h1>
+      <p class="post-meta"><time datetime="2026-10-06">6 Oct 2026</time><span class="sep" aria-hidden="true"></span><span>6 min read</span></p>
+      <p class="byline"><img src="../logo.png" alt="" width="36" height="36" loading="lazy"><span>By <strong>Nishanth M</strong> · DevOps Engineer | SRE</span></p>
+    </header>
+
+    <div class="post-layout">
+      <!-- BLOCK 3 · BODY (.prose[data-article] drives the progress bar) -->
+      <div class="prose" data-article>
+
+        <p class="lead">You can&rsquo;t go straight from an early 7.x Elasticsearch to 8.x. There&rsquo;s a required stop on the way, and that stop is 7.17. I took our dev Elasticsearch and Kibana from 7.11.2 to 7.17.28. This post covers why that step exists, how it works, and what still has to happen before 8.x.</p>
+        <p>To be clear about where things stand: the dev stack now runs <strong>7.17.28</strong>. The 8.x upgrade is planned and hasn&rsquo;t been done yet. Most of this post is about making sure that next step is boring.</p>
+
+        <h2 id="why-717">Why you can&rsquo;t skip 7.17</h2>
+        <p>Elastic&rsquo;s upgrade guide is explicit: to upgrade to 8.x from 7.16 or earlier, you must first upgrade to 7.17. That holds even if you plan a full-cluster restart rather than a rolling upgrade.<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup> The only way around it is to stand up a fresh 8.x cluster and reindex from remote.</p>
+        <p>The reason is tooling, not just version numbers. 7.17 is the last 7.x minor, and it&rsquo;s the release that knows what 8.x will reject. Its Upgrade Assistant and deprecation checks are written against 8.x, so they can tell you what will break <em>before</em> you find out the hard way.<sup><a href="#ref-4" aria-label="Reference 4">[4]</a></sup></p>
+        <p>Getting to 7.17 from 7.11 is the easy part. A rolling upgrade from any 7.0&ndash;7.16 release straight to 7.17 is a supported path, with no intermediate minors required.<sup><a href="#ref-2" aria-label="Reference 2">[2]</a></sup></p>
+
+        <h2 id="scope">What I upgraded, and why dev first</h2>
+        <p>The scope was our <strong>dev</strong> Elasticsearch and Kibana, both from 7.11.2 to 7.17.28. Starting in dev was deliberate. I work across devlab, stage, UAT and E2E environments, and dev is where an upgrade can go wrong cheaply. Every surprise found there is one that won&rsquo;t surprise anyone on a shared environment.</p>
+        <!-- REVIEW: node count, install method (Docker / package / tarball) and which environments use this cluster are not stated; add them if you want the post to be more concrete -->
+        <!-- REVIEW: Elastic's docs now reference 7.17.29 as the latest 7.17 patch; consider a line on keeping 7.17 patched before 8.x -->
+
+        <h2 id="snapshot">Snapshot first: there is no downgrade</h2>
+        <p>Elasticsearch doesn&rsquo;t support in-place downgrades. Once a cluster contains nodes on the new version, its internal state can change in ways that can&rsquo;t be reverted. If an upgrade fails partway, the documented way back is a fresh cluster on the old version, restored from a snapshot.<sup><a href="#ref-2" aria-label="Reference 2">[2]</a></sup><sup><a href="#ref-3" aria-label="Reference 3">[3]</a></sup><sup><a href="#ref-11" aria-label="Reference 11">[11]</a></sup> So the snapshot comes before anything else:</p>
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">snapshot before upgrading — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: names and paths are illustrative</span>
+<span class="c"># elasticsearch.yml on every node: allow a shared-filesystem repository</span>
+<span class="k">path.repo</span>: [<span class="s">"/mnt/es-backups"</span>]
+
+<span class="c"># Register the repository</span>
+PUT _snapshot/<span class="s">pre_upgrade</span>
+{ <span class="k">"type"</span>: <span class="s">"fs"</span>, <span class="k">"settings"</span>: { <span class="k">"location"</span>: <span class="s">"/mnt/es-backups"</span> } }
+
+<span class="c"># Snapshot everything, including cluster state (and Kibana's .kibana* indices)</span>
+PUT _snapshot/<span class="s">pre_upgrade</span>/<span class="s">before-7-17</span>?wait_for_completion=true
+{ <span class="k">"include_global_state"</span>: <span class="s">true</span> }</code></pre>
+        </figure>
+        <!-- REVIEW: repository type, name and location are illustrative; confirm how (and where) the pre-upgrade snapshot was actually taken -->
+        <p>The Kibana part matters as well. Kibana migrates its saved objects automatically when a new version starts, and rolling Kibana back needs a snapshot that includes its <code>.kibana*</code> indices.<sup><a href="#ref-6" aria-label="Reference 6">[6]</a></sup> A snapshot you&rsquo;ve never restored is a hope, not a backup, so restoring it into a scratch cluster at least once is worth the time.</p>
+
+        <h2 id="rolling">Rolling upgrade or full-cluster restart</h2>
+        <p>There are two ways to swap the binaries:</p>
+        <ul>
+          <li><strong>Rolling upgrade:</strong> one node at a time, so the cluster stays available. You stop replica allocation so the cluster doesn&rsquo;t rush to re-replicate a node that&rsquo;s coming straight back, upgrade and restart the node, re-enable allocation, and wait for green before moving to the next one.<sup><a href="#ref-3" aria-label="Reference 3">[3]</a></sup></li>
+          <li><strong>Full-cluster restart:</strong> stop every node, upgrade them all, start them again.<sup><a href="#ref-12" aria-label="Reference 12">[12]</a></sup> It causes downtime, but it&rsquo;s simpler, and on a single-node dev cluster it&rsquo;s effectively the only option anyway.</li>
+        </ul>
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">rolling upgrade, per node — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: one pass of a rolling upgrade (repeat per node)</span>
+PUT _cluster/settings
+{ <span class="k">"persistent"</span>: { <span class="k">"cluster.routing.allocation.enable"</span>: <span class="s">"primaries"</span> } }
+
+POST _flush                          <span class="c"># faster shard recovery after restart</span>
+
+<span class="c"># stop the node → install 7.17.28 → start it → confirm it rejoined</span>
+GET _cat/nodes?v&amp;h=name,version,node.role
+
+PUT _cluster/settings
+{ <span class="k">"persistent"</span>: { <span class="k">"cluster.routing.allocation.enable"</span>: <span class="s">null</span> } }
+
+GET _cluster/health?wait_for_status=green&amp;timeout=60s</code></pre>
+        </figure>
+        <!-- REVIEW: whether the dev upgrade was rolling or a full restart is not stated; the post presents both as options on purpose -->
+
+        <h2 id="kibana">Kibana goes second, on the same version</h2>
+        <p>Elasticsearch is upgraded first, then Kibana, and the two should end up on the same version. Kibana on an older version than Elasticsearch works temporarily, with a warning at startup, precisely to make that order possible. Running different versions isn&rsquo;t a configuration to stay on.<sup><a href="#ref-7" aria-label="Reference 7">[7]</a></sup></p>
+        <p>Two rules from the Kibana upgrade guide are easy to miss. First, shut down <em>all</em> Kibana instances before upgrading, because several Kibana versions running against the same indices is unsupported and can lose data. Second, give the saved-object migration time to finish on first start, and check its logs before calling the upgrade done.<sup><a href="#ref-6" aria-label="Reference 6">[6]</a></sup></p>
+        <p>&ldquo;Done&rdquo; deserves an end-to-end check, not just a green process list:</p>
+        <ul>
+          <li>Every node reports the new version, and cluster health is back to green.</li>
+          <li>Kibana&rsquo;s status page is healthy, and existing dashboards, saved searches and index patterns still open.</li>
+          <li>Whatever writes to the cluster is still writing: fresh documents are arriving in the indices you expect.</li>
+          <li>The deprecation log is worth reading straight away. 7.17 knows about more of 8.x than 7.11 did, so new warnings after the upgrade are expected, and they&rsquo;re your first look at the 8.x to-do list.</li>
+        </ul>
+        <aside class="callout callout--ok">
+          <span class="callout-k">Where things stand</span>
+          <p>Dev Elasticsearch and Kibana: upgraded from 7.11.2 to <strong>7.17.28</strong>, on matching versions. 8.x is next, and it hasn&rsquo;t been done yet.</p>
+        </aside>
+
+        <h2 id="unlocks">What 7.17 unlocks for 8.x</h2>
+        <p>Being on 7.17 is what makes the 8.x upgrade something you can plan:</p>
+        <ul>
+          <li><strong>The Upgrade Assistant</strong> (Kibana &rsaquo; Stack Management) lists deprecated settings and features, and walks you through fixing them. That includes reindexing any indices created before 7.0, which 8.x can&rsquo;t read. Every critical issue has to be resolved before upgrading.<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup><sup><a href="#ref-4" aria-label="Reference 4">[4]</a></sup></li>
+          <li><strong>Deprecation logs</strong> show what your <em>clients</em> are doing, not just your configuration. <code>CRITICAL</code> entries mark features that will be removed in the next major version. Deprecation logs can also be indexed into a data stream, which makes them searchable from Kibana, and setting an <code>X-Opaque-Id</code> header lets you trace each one back to its caller.<sup><a href="#ref-5" aria-label="Reference 5">[5]</a></sup></li>
+          <li><strong>The deprecation info API</strong> is what the assistant uses underneath, if you&rsquo;d rather script the checks.<sup><a href="#ref-8" aria-label="Reference 8">[8]</a></sup></li>
+          <li><strong>Compatibility bridges.</strong> Beats and Logstash 7.17 work with Elasticsearch 8.x, so the clients don&rsquo;t all have to move in the same window. 8.x also offers a REST API compatibility mode for 7.x-style requests, but that&rsquo;s meant as a bridge, not a destination.<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup></li>
+        </ul>
+
+        <h2 id="before-8x">What still has to happen before 8.x</h2>
+        <p>This is the list I&rsquo;m working from. None of it is done yet, and none of it should be rushed:</p>
+        <ol>
+          <li><strong>Clear the Upgrade Assistant</strong> to zero critical issues.</li>
+          <li><strong>Let deprecation logs collect real traffic</strong> for a while, so occasional jobs and rarely used clients show up too.</li>
+          <li><strong>Read the 8.0 breaking changes</strong>, and those of every 8.x minor up to the target release.<sup><a href="#ref-9" aria-label="Reference 9">[9]</a></sup> Some are quiet behaviour changes. For example, <code>action.destructive_requires_name</code> now defaults to <code>true</code>, so wildcard deletes stop working. Others are removed settings that stop a node from starting at all.</li>
+          <li><strong>Check plugin and client compatibility</strong> against the target version.<sup><a href="#ref-10" aria-label="Reference 10">[10]</a></sup></li>
+          <li><strong>Take a fresh snapshot</strong> and run the 8.x upgrade in dev first, the same way as this one.</li>
+        </ol>
+        <!-- REVIEW: this checklist is the general Elastic-recommended path; adjust to the actual 8.x plan and target version once decided -->
+
+        <h2 id="lessons">What I&rsquo;d tell myself before starting</h2>
+        <ul>
+          <li><strong>Treat 7.17 as a milestone of its own,</strong> not a stepping stone you rush through. Most of the 8.x preparation happens here.</li>
+          <li><strong>Snapshot, then restore-test the snapshot.</strong> No in-place downgrade means the snapshot <em>is</em> the rollback plan.</li>
+          <li><strong>Upgrade Elasticsearch first, then Kibana,</strong> and end up on matching versions.</li>
+          <li><strong>Start in dev.</strong> It&rsquo;s the cheapest place to learn what the next environment will need.</li>
+        </ul>
+        <p>Once the 8.x upgrade has actually happened, I&rsquo;ll write it up properly, including whatever the Upgrade Assistant turns up along the way.</p>
+
+        <!-- BLOCK 4 · REFERENCES (numbered; only verified URLs) -->
+        <h2 id="references">References</h2>
+        <ol class="refs" role="list">
+          <li id="ref-1"><span><a href="https://www.elastic.co/guide/en/elastic-stack/8.0/upgrading-elastic-stack.html" rel="noopener">Elastic — Upgrade to Elastic 8.0 (Installation and Upgrade Guide)</a><span class="src">https://www.elastic.co/guide/en/elastic-stack/8.0/upgrading-elastic-stack.html</span></span></li>
+          <li id="ref-2"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/setup-upgrade.html" rel="noopener">Elasticsearch 7.17 — Upgrade Elasticsearch</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/7.17/setup-upgrade.html</span></span></li>
+          <li id="ref-3"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/rolling-upgrades.html" rel="noopener">Elasticsearch 7.17 — Rolling upgrades</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/7.17/rolling-upgrades.html</span></span></li>
+          <li id="ref-4"><span><a href="https://www.elastic.co/guide/en/kibana/7.17/upgrade-assistant.html" rel="noopener">Kibana 7.17 — Upgrade Assistant</a><span class="src">https://www.elastic.co/guide/en/kibana/7.17/upgrade-assistant.html</span></span></li>
+          <li id="ref-5"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/logging.html" rel="noopener">Elasticsearch 7.17 — Logging (deprecation logging)</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/7.17/logging.html</span></span></li>
+          <li id="ref-6"><span><a href="https://www.elastic.co/guide/en/kibana/7.17/upgrade.html" rel="noopener">Kibana 7.17 — Upgrade Kibana</a><span class="src">https://www.elastic.co/guide/en/kibana/7.17/upgrade.html</span></span></li>
+          <li id="ref-7"><span><a href="https://www.elastic.co/guide/en/kibana/7.17/setup.html" rel="noopener">Kibana 7.17 — Set up (Elasticsearch version compatibility)</a><span class="src">https://www.elastic.co/guide/en/kibana/7.17/setup.html</span></span></li>
+          <li id="ref-8"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/migration-api-deprecation.html" rel="noopener">Elasticsearch 7.17 — Deprecation info APIs</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/7.17/migration-api-deprecation.html</span></span></li>
+          <li id="ref-9"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/8.0/migrating-8.0.html" rel="noopener">Elasticsearch 8.0 — Migrating to 8.0 (breaking changes)</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/8.0/migrating-8.0.html</span></span></li>
+          <li id="ref-10"><span><a href="https://www.elastic.co/support/matrix" rel="noopener">Elastic — Support matrix</a><span class="src">https://www.elastic.co/support/matrix</span></span></li>
+          <li id="ref-11"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/snapshot-restore.html" rel="noopener">Elasticsearch 7.17 — Snapshot and restore</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/7.17/snapshot-restore.html</span></span></li>
+          <li id="ref-12"><span><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/restart-upgrade.html" rel="noopener">Elasticsearch 7.17 — Full cluster restart upgrade</a><span class="src">https://www.elastic.co/guide/en/elasticsearch/reference/7.17/restart-upgrade.html</span></span></li>
+        </ol>
+      </div>
+
+      <!-- BLOCK 5 · STICKY TOC (hidden < 1080px; highlighted by js) -->
+      <nav class="toc" aria-label="On this page">
+        <span class="k">On this page</span>
+        <ol>
+          <li><a href="#why-717">Why you can’t skip 7.17</a></li>
+          <li><a href="#scope">What I upgraded, and why dev first</a></li>
+          <li><a href="#snapshot">Snapshot first: there is no downgrade</a></li>
+          <li><a href="#rolling">Rolling upgrade or full-cluster restart</a></li>
+          <li><a href="#kibana">Kibana goes second, on the same version</a></li>
+          <li><a href="#unlocks">What 7.17 unlocks for 8.x</a></li>
+          <li><a href="#before-8x">What still has to happen before 8.x</a></li>
+          <li><a href="#lessons">What I’d tell myself before starting</a></li>
+          <li><a href="#references">References</a></li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- BLOCK 6 · AUTHOR BOX -->
+    <aside class="author" aria-labelledby="author-h">
+      <img src="../logo.png" alt="" width="64" height="64" loading="lazy">
+      <div>
+        <h2 id="author-h">Nishanth M</h2>
+        <p>DevOps Engineer | SRE at SMI Tech Group. I run containerised platforms across devlab, stage, UAT and E2E, from CI/CD and observability to GPU inference serving.</p>
+        <div class="links">
+          <a class="link-arrow" href="../index.html#projects">The project <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link-arrow" href="https://github.com/mnishanth23" rel="noopener">GitHub <span class="arr" aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- BLOCK 7 · PREV / NEXT (chronological; omit a side if none) -->
+    <nav class="pager" aria-label="More posts">
+      <a class="prev" href="prometheus-retention-108gb.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Older post</span><span class="t">How Prometheus retention ate 108 GB, and the one-line fix</span></a>
+      <span></span>
+    </nav>
+
+    <!-- BLOCK 8 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Working on something similar?</h2>
+        <p>I&rsquo;m always up for comparing notes on upgrades, logging stacks and on-call.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="assets/main.js" defer></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

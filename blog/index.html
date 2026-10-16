@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Blog — Nishanth M</title>
+<meta name="description" content="Write-ups from production: CI/CD, observability, capacity and the lessons behind them, by Nishanth M.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph (absolute URLs: update SITE if you deploy elsewhere — see README) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Blog — Nishanth M">
+<meta property="og:description" content="Write-ups from production: CI/CD, observability, capacity and the lessons behind them, by Nishanth M.">
+<meta property="og:url" content="https://mnishanth23.github.io/blog/">
+<meta property="og:image" content="https://mnishanth23.github.io/logo.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/site.css">
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="index.html" aria-current="page">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="index.html" aria-current="page"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Blog</p>
+      <h1>Notes from production.</h1>
+      <p>What I changed, why, and what I&rsquo;d do differently: pipelines, observability, capacity and incidents.</p>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="All posts">
+    <!-- FEATURED (newest) post: move the newest post here when publishing -->
+<!-- POST CARD: elasticsearch-7-11-to-7-17-upgrade  (title view-transition-name must match the post <h1>) -->
+<article class="card post-card feature reveal" style="--d:0">
+  <a class="card-link" href="../blog/elasticsearch-7-11-to-7-17-upgrade.html">
+    <div class="card-body">
+      <span class="feature-badge">Latest post</span>
+      <p class="post-meta"><time datetime="2026-10-06">6 Oct 2026</time><span class="sep" aria-hidden="true"></span><span>6 min read</span></p>
+      <h2 class="card-title" style="view-transition-name: post-elasticsearch-7-11-to-7-17-upgrade">Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x</h2>
+      <p class="card-text">Why you can’t jump straight to 8.x, what the 7.17 upgrade of dev Elasticsearch and Kibana involved, and what still has to happen before 8.x (spoiler: that part isn’t done yet).</p>
+      <ul class="tags" role="list"><li>Observability</li><li>Elasticsearch</li></ul>
+      <span class="card-cta">Read post <span class="arr" aria-hidden="true">→</span></span>
+    </div>
+    <div class="card-media" aria-hidden="true">
+      <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <path class="g-line" opacity=".45" d="M20 104H220M20 104V14"/>
+        <path class="g-hot" stroke-dasharray="6 6" d="M20 34H220"/>
+        <polyline class="g-line" points="20,88 48,82 76,86 104,66 132,72 160,48 188,58 220,52"/>
+        <rect class="g-fill" x="155" y="43" width="10" height="10"/>
+      </svg>
+      <span class="media-label">blog/elasticsearch-7-11-to-7-17-upgrade</span>
+    </div>
+  </a>
+</article>
+
+    <!-- REMAINING POSTS, newest first -->
+    <div class="grid grid-2">
+<!-- POST CARD: prometheus-retention-108gb  (title view-transition-name must match the post <h1>) -->
+<article class="card post-card reveal" style="--d:0">
+  <a class="card-link" href="../blog/prometheus-retention-108gb.html">
+    <div class="card-body">
+      <p class="post-meta"><time datetime="2026-09-10">10 Sep 2026</time><span class="sep" aria-hidden="true"></span><span>5 min read</span></p>
+      <h2 class="card-title" style="view-transition-name: post-prometheus-retention-108gb">How Prometheus retention ate 108 GB, and the one-line fix</h2>
+      <p class="card-text">A disk-space crisis on a backend server traced back to a year of Prometheus retention. Dropping it to 90 days took the volume from 127 GB to 14 GB.</p>
+      <ul class="tags" role="list"><li>Observability</li><li>Prometheus</li></ul>
+      <span class="card-cta">Read post <span class="arr" aria-hidden="true">→</span></span>
+    </div>
+  </a>
+</article>
+<!-- POST CARD: jenkins-to-drone-migration  (title view-transition-name must match the post <h1>) -->
+<article class="card post-card reveal" style="--d:1">
+  <a class="card-link" href="../blog/jenkins-to-drone-migration.html">
+    <div class="card-body">
+      <p class="post-meta"><time datetime="2026-08-18">18 Aug 2026</time><span class="sep" aria-hidden="true"></span><span>7 min read</span></p>
+      <h2 class="card-title" style="view-transition-name: post-jenkins-to-drone-migration">Moving from Jenkins to Drone CI: what changed, and what I’d do again</h2>
+      <p class="card-text">Pipeline-as-code, container-native steps, Kaniko → Harbor → Trivy, and the review that closed the gaps behind minimum-failure production deployments.</p>
+      <ul class="tags" role="list"><li>CI/CD</li><li>Drone</li><li>Jenkins</li></ul>
+      <span class="card-cta">Read post <span class="arr" aria-hidden="true">→</span></span>
+    </div>
+  </a>
+</article>
+    </div>
+  </section>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="assets/main.js" defer></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

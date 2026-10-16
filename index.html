@@ -1625,6 +1625,26 @@
   /* footer rule spans exactly the text width (inside the side padding), not the padded box */
   footer .wrap { border-top: none; position: relative; }
   footer .wrap::before { content: ''; position: absolute; top: 0; left: 28px; right: 28px; height: 1px; background: var(--line); }
+
+  /* Writing (blog) section on the homepage */
+  .writing { padding: 110px 0 0; }
+  .writing-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .writing-all { font-family: var(--heading); font-weight: 500; color: var(--text); text-decoration: none; display: inline-flex; gap: 8px; }
+  .writing-all .arr { color: var(--red-hi); transition: transform 0.25s var(--expo); }
+  .writing-all:hover .arr { transform: translateX(4px); }
+  .post-card .project-num { color: var(--text); }
+  @media (max-width: 760px) { .writing { padding-top: 84px; } }
+
+  /* Light theme: dark outlines on the project demo panels and their inner boxes */
+  html[data-theme="light"] .sim, html[data-theme="light"] .gpu-demo { border: 1px solid rgba(15, 18, 30, 0.55); }
+  html[data-theme="light"] .bg-env, html[data-theme="light"] .ci-stages li, html[data-theme="light"] .mq-node,
+  html[data-theme="light"] .reg-list li { border: 1px solid rgba(15, 18, 30, 0.45); }
+  html[data-theme="light"] .bg-env.live[data-env="blue"] { border-color: #1D5FD0; }
+  html[data-theme="light"] .bg-env.live[data-env="green"] { border-color: #138A45; }
+  html[data-theme="light"] .ci-stages li.done { border-color: #138A45; }
+  html[data-theme="light"] .ci-stages li.run { border-color: #B26A00; }
+  html[data-theme="light"] .mq-node.broker { border-color: #B3161A; }
+  html[data-theme="light"] .gd-bar, html[data-theme="light"] .bg-split, html[data-theme="light"] .obs-vol { box-shadow: inset 0 0 0 1px rgba(15, 18, 30, 0.3); }
 </style>
 <script>
   // Arm the entrance before first paint so the finished page never flashes.
@@ -1679,6 +1699,7 @@
     <ul class="navlinks" id="navlinks">
       <li><a href="#experience">Experience</a></li>
       <li><a href="#projects">Projects</a></li>
+      <li><a href="#writing">Blog</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#contact">Contact</a></li>
       <li><a href="https://github.com/mnishanth23" target="_blank" rel="noopener">GitHub</a></li>
@@ -1912,6 +1933,36 @@
           <span class="link-label">View on GitHub <span class="arr">↗</span></span>
         </a>
       </div>
+      </div>
+    </section>
+
+    <section class="writing" id="writing">
+      <div class="section-head">
+        <span class="eyebrow">Writing</span>
+        <div class="writing-head"><h2>Latest posts</h2><a class="writing-all" href="blog/index.html">All posts <span class="arr">→</span></a></div>
+      </div>
+      <div class="project-grid">
+        <a class="project-card post-card" href="blog/elasticsearch-7-11-to-7-17-upgrade.html">
+          <div class="project-top"><span class="project-num">6 Oct 2026</span><span class="project-kind">6 min read</span></div>
+          <h3>Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x</h3>
+          <p>Why you can’t jump straight to 8.x, what the 7.17 upgrade of dev Elasticsearch and Kibana involved, and what still has to happen before 8.x (spoiler: that part isn’t done yet).</p>
+          <div class="project-tags"><span>Observability</span><span>Elasticsearch</span></div>
+          <span class="link-label">Read post <span class="arr">→</span></span>
+        </a>
+        <a class="project-card post-card" href="blog/prometheus-retention-108gb.html">
+          <div class="project-top"><span class="project-num">10 Sep 2026</span><span class="project-kind">5 min read</span></div>
+          <h3>How Prometheus retention ate 108 GB, and the one-line fix</h3>
+          <p>A disk-space crisis on a backend server traced back to a year of Prometheus retention. Dropping it to 90 days took the volume from 127 GB to 14 GB.</p>
+          <div class="project-tags"><span>Observability</span><span>Prometheus</span></div>
+          <span class="link-label">Read post <span class="arr">→</span></span>
+        </a>
+        <a class="project-card post-card" href="blog/jenkins-to-drone-migration.html">
+          <div class="project-top"><span class="project-num">18 Aug 2026</span><span class="project-kind">7 min read</span></div>
+          <h3>Moving from Jenkins to Drone CI: what changed, and what I’d do again</h3>
+          <p>Pipeline-as-code, container-native steps, Kaniko → Harbor → Trivy, and the review that closed the gaps behind minimum-failure production deployments.</p>
+          <div class="project-tags"><span>CI/CD</span><span>Drone</span><span>Jenkins</span></div>
+          <span class="link-label">Read post <span class="arr">→</span></span>
+        </a>
       </div>
     </section>
 

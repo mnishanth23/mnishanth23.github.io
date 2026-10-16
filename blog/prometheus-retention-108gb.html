@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>How Prometheus retention ate 108 GB, and the one-line fix — Nishanth M</title>
+<meta name="description" content="A disk-space crisis on a backend server traced back to a year of Prometheus retention. Dropping it to 90 days took the volume from 127 GB to 14 GB. How TSDB retention works and how to size it.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph (absolute URLs: update SITE if you deploy elsewhere — see README) -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="How Prometheus retention ate 108 GB, and the one-line fix — Nishanth M">
+<meta property="og:description" content="A disk-space crisis on a backend server traced back to a year of Prometheus retention. Dropping it to 90 days took the volume from 127 GB to 14 GB. How TSDB retention works and how to size it.">
+<meta property="og:url" content="https://mnishanth23.github.io/blog/prometheus-retention-108gb.html">
+<meta property="og:image" content="https://mnishanth23.github.io/logo.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/site.css">
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+<meta property="article:published_time" content="2026-09-10">
+<meta property="article:author" content="Nishanth M">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="index.html" aria-current="page">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="index.html" aria-current="page"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+
+<!-- Reading progress bar (js/main.js section 7) -->
+<div class="progress" aria-hidden="true"><span></span></div>
+
+<!-- Blog post built from the template in blog/jenkins-to-drone-migration.html (BLOCK 1–8). -->
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Blog</a></li>
+        <li><span aria-current="page">Prometheus retention</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · POST HEADER: tags eyebrow, title (view transition), meta, byline -->
+    <header class="post-head">
+      <p class="eyebrow">Observability · Prometheus</p>
+      <h1 style="view-transition-name: post-prometheus-retention-108gb">How Prometheus retention ate 108 GB, and the one-line fix</h1>
+      <p class="post-meta"><time datetime="2026-09-10">10 Sep 2026</time><span class="sep" aria-hidden="true"></span><span>5 min read</span></p>
+      <p class="byline"><img src="../logo.png" alt="" width="36" height="36" loading="lazy"><span>By <strong>Nishanth M</strong> · DevOps Engineer | SRE</span></p>
+    </header>
+
+    <div class="post-layout">
+      <!-- BLOCK 3 · BODY (.prose[data-article] drives the progress bar) -->
+      <div class="prose" data-article>
+
+        <p class="lead">A disk-space crisis on one of our backend servers didn&rsquo;t come from logs, uploads or a runaway database. It came from monitoring: Prometheus was keeping a full year of metrics. Cutting retention to 90 days freed about 108&nbsp;GB.</p>
+        <p>The fix was one flag. Understanding <em>why</em> it was the right flag, and how to stop it from happening again, took a bit longer. This post covers both.</p>
+
+        <h2 id="setup">The server and the symptom</h2>
+        <p>I administer the backend server for our AI-SaaS product. It runs a fairly typical mix in Docker: Prometheus and cAdvisor for metrics, MongoDB (both 4 and 8), MariaDB, Redis and the PHP application. On a box like that, free disk is shared infrastructure. When it runs low, every service on it is at risk, not just the one that&rsquo;s growing.</p>
+        <!-- REVIEW: confirm all of these services share the volume that filled up, and how the low-disk condition was first noticed -->
+        <p>When I went looking for what was using the space, the biggest consumer was the Prometheus data volume at <strong>127&nbsp;GB</strong>. Retention was set to one year.</p>
+        <!-- REVIEW: 127 GB → 14 GB is a 113 GB difference, while the resume says "about 108 GB" freed; confirm which figures to show (e.g. measured at different times, or whole disk vs. volume) -->
+
+        <h2 id="how-retention-works">How Prometheus decides what to keep</h2>
+        <p>Prometheus stores samples in its local TSDB. Incoming data is held in memory, protected by a write-ahead log (WAL), and written out as two-hour blocks. In the background, those blocks are compacted into larger ones covering up to 10% of the retention time, or 31 days, whichever is smaller.<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup></p>
+        <p>Two flags decide when old blocks are deleted:</p>
+        <ul>
+          <li><strong><code>--storage.tsdb.retention.time</code></strong>: how long to keep samples, for example <code>90d</code> or <code>1y</code>.</li>
+          <li><strong><code>--storage.tsdb.retention.size</code></strong>: the maximum bytes of blocks to keep, for example <code>50GB</code>. It&rsquo;s disabled by default.</li>
+        </ul>
+        <p>If you set both, whichever limit is hit first wins.<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup> A few details matter in practice:</p>
+        <ul>
+          <li>Deletion works on <strong>whole blocks</strong>. A block is removed only once it&rsquo;s fully past the retention window, and cleanup runs in the background, so it can take up to two hours.</li>
+          <li>The size limit counts the WAL and memory-mapped head chunks, but only persistent blocks are deleted to stay under it.</li>
+          <li>These are <strong>command-line flags</strong>, not <code>prometheus.yml</code> settings. A config reload won&rsquo;t pick them up; the process has to restart.<sup><a href="#ref-2" aria-label="Reference 2">[2]</a></sup></li>
+        </ul>
+
+        <h2 id="the-fix">The one-line fix</h2>
+        <p>The change itself was retention from one year to 90 days. With Prometheus in Docker, that&rsquo;s one line in the container&rsquo;s command:</p>
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">docker-compose.yml — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: the shape of the change, not our production config</span>
+<span class="k">services</span>:
+  <span class="k">prometheus</span>:
+    <span class="k">image</span>: <span class="s">prom/prometheus</span>
+    <span class="k">command</span>:
+      - <span class="s">--config.file=/etc/prometheus/prometheus.yml</span>
+      - <span class="s">--storage.tsdb.path=/prometheus</span>
+      - <span class="s">--storage.tsdb.retention.time=90d</span>   <span class="c"># was 1y</span>
+    <span class="k">volumes</span>:
+      - <span class="s">prometheus-data:/prometheus</span></code></pre>
+        </figure>
+        <!-- REVIEW: image tag, paths and Compose layout are illustrative; confirm how Prometheus is actually started on the server -->
+        <p>After the restart, Prometheus dropped every block older than 90 days. The volume went from <strong>127&nbsp;GB to 14&nbsp;GB</strong>, freeing about 108&nbsp;GB, and the disk crisis was over.</p>
+        <p>Why not just add disk? Because the growth would have come back. With a year of retention, the volume only stops growing once the oldest block expires, and then it tracks whatever the ingestion rate does. A bigger disk buys time; a retention number you&rsquo;ve thought about fixes the cause.</p>
+        <p>Checking the result doesn&rsquo;t take long. The size of the data directory is the obvious check. Inside Prometheus, the <em>TSDB Status</em> page in the web UI shows head-block statistics, and a range query against any long-lived series should now start about 90 days back. Remember the two-hour cleanup window: if nothing shrinks right after the restart, wait before assuming the flag didn&rsquo;t take.</p>
+
+        <aside class="callout">
+          <span class="callout-k">Before you shorten retention</span>
+          <p>The data is deleted, not archived. If anyone might need older metrics, take a TSDB snapshot first. The admin API&rsquo;s <code>/api/v1/admin/tsdb/snapshot</code> endpoint does this, but only when Prometheus runs with <code>--web.enable-admin-api</code>.<sup><a href="#ref-3" aria-label="Reference 3">[3]</a></sup> Then turn the admin API back off.</p>
+        </aside>
+        <!-- REVIEW: whether a snapshot or sign-off was taken before the change is not stated; the callout is general advice -->
+
+        <h2 id="sizing">Sizing retention instead of guessing</h2>
+        <p>&ldquo;A year&rdquo; and &ldquo;90 days&rdquo; are both guesses until you put numbers on them. The Prometheus docs give a rough capacity formula:<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup></p>
+        <blockquote>disk &asymp; retention (seconds) &times; samples ingested per second &times; 1&ndash;2 bytes per sample</blockquote>
+        <p>Retention is linear in that formula, but ingestion isn&rsquo;t fixed. cAdvisor exports series per container,<sup><a href="#ref-11" aria-label="Reference 11">[11]</a></sup> and series come and go as containers are created and replaced. So the real size of a retention window depends on what was running during it, not only on how long it is. Prometheus reports the numbers you need about itself:</p>
+        <!-- REVIEW: 1y → 90d is a ~4× shorter window but the volume shrank ~9× (127 → 14 GB); if you know why (e.g. heavier series churn in older months), consider saying so -->
+
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">PromQL — simplified example</span></figcaption>
+<pre><code><span class="c"># Samples ingested per second (averaged over the last hour)</span>
+rate(<span class="k">prometheus_tsdb_head_samples_appended_total</span>[1h])
+
+<span class="c"># Active series in the head block: the main driver of ingestion</span>
+<span class="k">prometheus_tsdb_head_series</span>
+
+<span class="c"># Bytes currently used by persisted blocks</span>
+<span class="k">prometheus_tsdb_storage_blocks_bytes</span>
+
+<span class="c"># Will this filesystem fill within a week at the current trend? (needs node_exporter)</span>
+predict_linear(<span class="k">node_filesystem_avail_bytes</span>{mountpoint=<span class="s">"/"</span>}[6h], <span class="s">7 * 24 * 3600</span>) &lt; 0</code></pre>
+        </figure>
+        <!-- REVIEW: node_exporter is not in the confirmed stack for this server; the last query is a general pattern, not a statement of what is deployed -->
+        <p>Two habits follow from this. First, decide retention from how far back people actually query, not from how much history feels safe. Second, set <code>--storage.tsdb.retention.size</code> as a safety net under the time limit. The docs suggest at most 80&ndash;85% of the disk allocated to Prometheus, leaving room for compaction, which briefly keeps old and new blocks on disk together.<sup><a href="#ref-1" aria-label="Reference 1">[1]</a></sup> With both set, Prometheus trims data before the disk fills, even if ingestion grows faster than you planned.</p>
+
+        <h2 id="long-term">When you really do need a year</h2>
+        <p>Sometimes long-term trends are worth keeping for capacity planning or year-over-year comparisons. Raw, full-resolution local retention is the most expensive way to get them. Better options:</p>
+        <ul>
+          <li><strong>Recording rules</strong> precompute the aggregates you chart, such as per-service CPU or request rates.<sup><a href="#ref-4" aria-label="Reference 4">[4]</a></sup><sup><a href="#ref-5" aria-label="Reference 5">[5]</a></sup> On their own they don&rsquo;t save space, because recorded series live in the same TSDB under the same retention. They pay off when a second, long-retention Prometheus keeps <em>only</em> those aggregates, pulled through federation.<sup><a href="#ref-6" aria-label="Reference 6">[6]</a></sup></li>
+          <li><strong>Remote storage</strong> moves history off the box. Prometheus can remote-write to systems such as Thanos or Grafana Mimir.<sup><a href="#ref-7" aria-label="Reference 7">[7]</a></sup> Thanos&rsquo; compactor also <strong>downsamples</strong> old data to 5-minute and 1-hour resolution, which is what you want for a year-long graph anyway.<sup><a href="#ref-8" aria-label="Reference 8">[8]</a></sup><sup><a href="#ref-9" aria-label="Reference 9">[9]</a></sup></li>
+        </ul>
+        <p>Either way, local Prometheus goes back to doing what it&rsquo;s good at: fast queries over recent data for dashboards and alerting.</p>
+        <!-- REVIEW: no long-term storage is claimed as deployed; this section is a recommendation -->
+
+        <h2 id="takeaways">What I took away</h2>
+        <ol>
+          <li><strong>Retention is a capacity decision.</strong> Treat it like any other disk budget, with a number you can defend.</li>
+          <li><strong>Set a size limit as well as a time limit.</strong> Time says what you want to keep; size stops the disk from filling up.</li>
+          <li><strong>Monitor the monitoring.</strong> Prometheus exports its own storage metrics; graph them next to free disk.</li>
+          <li><strong>Keep long-term history somewhere built for it</strong>, at lower resolution, instead of keeping every raw sample locally.</li>
+        </ol>
+        <p>Google&rsquo;s SRE book makes the point that monitoring should stay simple, with data that is actually used.<sup><a href="#ref-10" aria-label="Reference 10">[10]</a></sup> A year of raw samples that nobody queried was the opposite of that, and it cost about 108&nbsp;GB of disk on a shared server.</p>
+
+        <!-- BLOCK 4 · REFERENCES (numbered; only verified URLs) -->
+        <h2 id="references">References</h2>
+        <ol class="refs" role="list">
+          <li id="ref-1"><span><a href="https://prometheus.io/docs/prometheus/latest/storage/" rel="noopener">Prometheus — Storage</a><span class="src">https://prometheus.io/docs/prometheus/latest/storage/</span></span></li>
+          <li id="ref-2"><span><a href="https://prometheus.io/docs/prometheus/latest/command-line/prometheus/" rel="noopener">Prometheus — Command-line flags</a><span class="src">https://prometheus.io/docs/prometheus/latest/command-line/prometheus/</span></span></li>
+          <li id="ref-3"><span><a href="https://prometheus.io/docs/prometheus/latest/querying/api/" rel="noopener">Prometheus — HTTP API (TSDB admin APIs)</a><span class="src">https://prometheus.io/docs/prometheus/latest/querying/api/</span></span></li>
+          <li id="ref-4"><span><a href="https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/" rel="noopener">Prometheus — Recording rules</a><span class="src">https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/</span></span></li>
+          <li id="ref-5"><span><a href="https://prometheus.io/docs/practices/rules/" rel="noopener">Prometheus — Recording rule best practices</a><span class="src">https://prometheus.io/docs/practices/rules/</span></span></li>
+          <li id="ref-6"><span><a href="https://prometheus.io/docs/prometheus/latest/federation/" rel="noopener">Prometheus — Federation</a><span class="src">https://prometheus.io/docs/prometheus/latest/federation/</span></span></li>
+          <li id="ref-7"><span><a href="https://prometheus.io/docs/operating/integrations/" rel="noopener">Prometheus — Integrations (remote endpoints and storage)</a><span class="src">https://prometheus.io/docs/operating/integrations/</span></span></li>
+          <li id="ref-8"><span><a href="https://thanos.io/tip/components/compact.md/" rel="noopener">Thanos — Compactor and downsampling</a><span class="src">https://thanos.io/tip/components/compact.md/</span></span></li>
+          <li id="ref-9"><span><a href="https://grafana.com/docs/mimir/latest/" rel="noopener">Grafana Mimir documentation</a><span class="src">https://grafana.com/docs/mimir/latest/</span></span></li>
+          <li id="ref-10"><span><a href="https://sre.google/sre-book/monitoring-distributed-systems/" rel="noopener">Google SRE book — Monitoring Distributed Systems</a><span class="src">https://sre.google/sre-book/monitoring-distributed-systems/</span></span></li>
+          <li id="ref-11"><span><a href="https://github.com/google/cadvisor" rel="noopener">cAdvisor (GitHub)</a><span class="src">https://github.com/google/cadvisor</span></span></li>
+        </ol>
+      </div>
+
+      <!-- BLOCK 5 · STICKY TOC (hidden < 1080px; highlighted by js) -->
+      <nav class="toc" aria-label="On this page">
+        <span class="k">On this page</span>
+        <ol>
+          <li><a href="#setup">The server and the symptom</a></li>
+          <li><a href="#how-retention-works">How Prometheus decides what to keep</a></li>
+          <li><a href="#the-fix">The one-line fix</a></li>
+          <li><a href="#sizing">Sizing retention instead of guessing</a></li>
+          <li><a href="#long-term">When you really do need a year</a></li>
+          <li><a href="#takeaways">What I took away</a></li>
+          <li><a href="#references">References</a></li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- BLOCK 6 · AUTHOR BOX -->
+    <aside class="author" aria-labelledby="author-h">
+      <img src="../logo.png" alt="" width="64" height="64" loading="lazy">
+      <div>
+        <h2 id="author-h">Nishanth M</h2>
+        <p>DevOps Engineer | SRE at SMI Tech Group. I run containerised platforms across devlab, stage, UAT and E2E, from CI/CD and observability to GPU inference serving.</p>
+        <div class="links">
+          <a class="link-arrow" href="../index.html#projects">The project <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link-arrow" href="https://github.com/mnishanth23" rel="noopener">GitHub <span class="arr" aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- BLOCK 7 · PREV / NEXT (chronological; omit a side if none) -->
+    <nav class="pager" aria-label="More posts">
+      <a class="prev" href="jenkins-to-drone-migration.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Older post</span><span class="t">Moving from Jenkins to Drone CI: what changed, and what I’d do again</span></a>
+      <a class="next" href="elasticsearch-7-11-to-7-17-upgrade.html"><span class="k">Newer post <span class="arr" aria-hidden="true">→</span></span><span class="t">Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x</span></a>
+    </nav>
+
+    <!-- BLOCK 8 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Working on something similar?</h2>
+        <p>I&rsquo;m always up for comparing notes on monitoring, capacity and on-call.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="assets/main.js" defer></script>
+<script src="assets/site.js"></script>
+</body>
+</html>
