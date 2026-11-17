@@ -47,20 +47,24 @@
     ['blog/jenkins-to-drone-migration.html', 'Moving from Jenkins to Drone CI: what changed, and what I’d do again']
   ];
   var HELP = [
+    ['ls', 'list what is here'],
+    ['cd experience', 'roles at SMI Tech Group'],
+    ['cd skills', 'tools I work with'],
+    ['cd projects', 'projects (cd projects/<name> for a case study)'],
+    ['cd stats', 'numbers from real work'],
+    ['cd blog', 'write-ups'],
+    ['cd contact', 'email, GitHub, LinkedIn'],
+    ['cat resume.pdf', 'link to my résumé (PDF)'],
     ['whoami', 'who I am'],
-    ['experience', 'roles at SMI Tech Group'],
-    ['skills', 'tools I work with'],
-    ['projects', 'kubectl get projects'],
-    ['stats', 'numbers from real work'],
-    ['blog', 'write-ups'],
     ['github', 'live data from GitHub'],
-    ['contact', 'email, GitHub, LinkedIn'],
-    ['resume', 'link to my résumé (PDF)'],
+    ['pwd', 'where you are'],
+    ['cd ..', 'go back home'],
     ['history', 'previous commands (↑/↓ also work)'],
     ['clear', 'clear the screen']
   ];
-  var COMPLETIONS = ['help', 'whoami', 'experience', 'cat experience', 'skills', 'ls skills', 'projects',
-    'kubectl get projects', 'stats', 'blog', 'contact', 'ssh contact', 'resume', 'cat resume', 'github', 'clear', 'history'];
+  var DIRS = ['experience', 'skills', 'projects', 'stats', 'blog', 'contact'];
+  var COMPLETIONS = ['help', 'whoami', 'ls', 'pwd', 'cd ..', 'cd ~', 'cat resume.pdf', 'kubectl get projects', 'ssh contact', 'github', 'clear', 'history']
+    .concat(DIRS.map(function (d) { return 'cd ' + d; }));
 
   function reducedMotion() {
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -99,6 +103,13 @@
     var base = opts.base != null ? opts.base : (el.getAttribute('data-base') || '');
     var uid = 'lt' + Math.random().toString(36).slice(2, 8);
     function site(p) { return base + p; }
+    var cwd = '';                                   // '' = home (~), else one of DIRS
+    function cwdLabel() { return cwd ? '~/' + cwd : CWD; }
+    function setCwd(d) {
+      cwd = d;
+      var old = line.querySelector('.lt-prompt'); if (old) old.replaceWith(promptNode());
+      var t = term.querySelector('.lt-title'); if (t) t.textContent = USER + ': ' + cwdLabel();
+    }
 
     /* ---------- build the window ---------- */
     var log = h('div', 'lt-log', null, { role: 'log', 'aria-live': 'polite', 'aria-relevant': 'additions', 'aria-label': 'Terminal output' });
@@ -126,7 +137,7 @@
     el.appendChild(term);
 
     function promptNode() {
-      return h('span', 'lt-prompt', [h('span', 'lt-p-user', USER), h('span', 'lt-p-sep', ':' + CWD + '$ ')], { 'aria-hidden': 'true' });
+      return h('span', 'lt-prompt', [h('span', 'lt-p-user', USER), h('span', 'lt-p-sep', ':' + cwdLabel() + '$ ')], { 'aria-hidden': 'true' });
     }
     function scrollEnd() { body.scrollTop = body.scrollHeight; }   // internal scroll only — never moves the page
     function row(kids, cls) { return h('div', 'lt-row' + (cls ? ' ' + cls : ''), kids); }
@@ -140,8 +151,8 @@
       pairs.forEach(function (p) { dl.appendChild(h('dt', null, p[0])); dl.appendChild(h('dd', null, p[1])); });
       return dl;
     }
-    function chip(cmd) {
-      var b = h('button', 'lt-chip', cmd, { type: 'button', 'aria-label': 'Run ' + cmd });
+    function chip(cmd, label) {
+      var b = h('button', 'lt-chip', label || cmd, { type: 'button', 'aria-label': 'Run ' + cmd });
       b.addEventListener('click', function (e) { e.stopPropagation(); finishIntro(); run(cmd); });
       return b;
     }
@@ -235,8 +246,30 @@
     };
     C.clear = function () { log.textContent = ''; };
     C.ls = function () {
-      block([row(['experience  skills  projects  blog  contact  ', h('a', null, 'resume.pdf', { href: site('resume.pdf'), target: '_blank', rel: 'noopener' })])]);
+      if (cwd && C[cwd]) { C[cwd](); return; }    // inside a folder: show its contents
+      var kids = []; DIRS.forEach(function (d) { kids.push(chip('cd ' + d, d + '/'), '  '); });
+      kids.push(h('a', null, 'resume.pdf', { href: site('resume.pdf'), target: '_blank', rel: 'noopener' }));
+      block([row(kids)]);
     };
+    C.pwd = function () { block([row('/home/nishanth' + (cwd ? '/' + cwd : ''))]); };
+    function cd(arg) {
+      arg = (arg || '').replace(/\/+$/, '').replace(/^~\/?/, '').replace(/^\.\//, '');
+      if (!arg || arg === '/' ) { setCwd(''); return; }
+      if (arg === '..') { setCwd(''); return; }
+      var parts = arg.split('/');
+      var dir = parts[0], sub = parts[1];
+      if (cwd === 'projects' && !sub && DIRS.indexOf(dir) < 0) { sub = dir; dir = 'projects'; }
+      if (DIRS.indexOf(dir) < 0) { block([row([h('span', 'lt-err', 'cd: no such directory: '), arg, ' — try ', chip('ls')])]); return; }
+      if (sub && dir === 'projects') {
+        var p = PROJECTS.filter(function (x) { return x[0] === sub; })[0];
+        if (!p) { block([row([h('span', 'lt-err', 'cd: no such project: '), sub, ' — try ', chip('cd projects')])]); return; }
+        setCwd('projects');
+        block([row([h('span', 'lt-muted', 'case study → '), h('a', null, 'projects/' + p[0] + '.html', { href: site('projects/' + p[0] + '.html') })])]);
+        return;
+      }
+      setCwd(dir);
+      C[dir]();
+    }
 
     var ALIASES = {
       'cat experience': 'experience', 'ls skills': 'skills', 'kubectl get projects': 'projects',
@@ -273,6 +306,9 @@
         block([row(['There’s no escape — but there is ', chip('contact'), ' 🙂'])]);
         return;
       }
+      var m = /^cd(?:\s+(.*))?$/.exec(low);
+      if (m) { cd(m[1]); return; }
+      if (low === 'cat resume.pdf' || low === 'open resume.pdf') { C.resume(); return; }
       var key = ALIASES[low] || low;
       if (Object.prototype.hasOwnProperty.call(C, key)) { C[key](); return; }
       block([row([h('span', 'lt-err', 'command not found: '), cmd.split(' ')[0], ' — type ', chip('help')])]);
@@ -341,7 +377,7 @@
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
     function introOutput() {
       C.whoami();
-      block([row(['Type ', chip('help'), ' to see what I can do.'])]);
+      block([row(['Type ', chip('ls'), ' then ', chip('cd projects'), ' — or ', chip('help'), ' for everything.'])]);
     }
     function finishIntro() {
       if (introDone) return;

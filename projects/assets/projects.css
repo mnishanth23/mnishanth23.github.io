@@ -84,3 +84,12 @@ html[data-theme="light"] .cta-band h2 { color: var(--text); }
 /* Phase track: hairlines drawn per cell so a part-filled last row doesn't show a grey block */
 .phase-track { gap: 0; background: var(--panel); }
 .phase-track li { box-shadow: inset -1px -1px 0 var(--line); }
+
+/* Diagram flow animation (assets/flow.js): travelling packet + box highlight */
+.d-packet { fill: #fff; filter: drop-shadow(0 0 4px #FF3B3C) drop-shadow(0 0 10px rgba(255, 59, 60, .8)); }
+html[data-theme="light"] .d-packet { fill: #D3201F; filter: drop-shadow(0 0 4px rgba(211, 32, 31, .7)); }
+.d-box { transition: stroke .35s ease, filter .35s ease, stroke-width .35s ease; }
+.d-box.d-hit { stroke: #FF3B3C; stroke-width: 2.5; filter: drop-shadow(0 0 10px rgba(255, 59, 60, .55)); }
+.d-box--ok.d-hit { stroke: #2ED573; filter: drop-shadow(0 0 10px rgba(46, 213, 115, .55)); }
+html[data-theme="light"] .d-box.d-hit { stroke: #D3201F; filter: drop-shadow(0 0 8px rgba(211, 32, 31, .35)); }
+html[data-theme="light"] .d-box--ok.d-hit { stroke: #128a47; filter: drop-shadow(0 0 8px rgba(18, 138, 71, .35)); }
