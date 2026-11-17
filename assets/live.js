@@ -14,10 +14,11 @@
 
   var GH_USER = 'mnishanth23';
   var SITE_REPO = 'mnishanth23.github.io';
+  var HIDDEN = ['sales-insights-'];   // repos never shown on the portfolio
   var API = 'https://api.github.com';
   var WORKFLOW = 'uptime.yml';
   var WORKFLOW_URL = 'https://github.com/' + GH_USER + '/' + SITE_REPO + '/actions/workflows/' + WORKFLOW;
-  var CACHE_KEY = 'live-gh-v2';
+  var CACHE_KEY = 'live-gh-v3';
   var TTL = 30 * 60 * 1000, FAIL_TTL = 5 * 60 * 1000, TIMEOUT = 8000;
   var STRIP = 30;
 
@@ -85,7 +86,7 @@
     var d = { publicRepos: null, repos: [], lastDeploy: null, deployUrl: null, uptime: null };
     if (user && !user.__notFound && typeof user.public_repos === 'number') d.publicRepos = user.public_repos;
     if (Array.isArray(repos)) {
-      d.repos = repos.filter(function (r) { return r && r.name && r.name.toLowerCase() !== SITE_REPO; })
+      d.repos = repos.filter(function (r) { return r && r.name && r.name.toLowerCase() !== SITE_REPO && HIDDEN.indexOf(r.name.toLowerCase()) < 0; })
         .slice(0, 3)
         .map(function (r) { return { name: r.name, url: r.html_url, lang: r.language || null, pushed: r.pushed_at }; });
     }
