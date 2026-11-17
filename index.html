@@ -1657,8 +1657,8 @@
   html[data-theme="light"] .gd-bar, html[data-theme="light"] .bg-split, html[data-theme="light"] .obs-vol { box-shadow: inset 0 0 0 1px rgba(15, 18, 30, 0.3); }
 
   /* =====================================================================
-     OPENING LOADER: spotlight → falling dot → "I" → NISHANTH flips in (3D)
-     → scrambles to PORTFOLIO → static-noise dissolve → hero.
+     OPENING LOADER: spotlight → the "I" starts as the DevOps ∞ loop → NISHANTH flips in (3D)
+     → scrambles to PORTFOLIO → deploy-to-production bar → screen splits open → hero.
      Once per browser session; click / key / Esc skips; reduced motion skips.
      ===================================================================== */
   #loader { position: fixed; inset: 0; z-index: 9999; background: #000; display: grid; place-items: center; overflow: hidden; cursor: pointer; }
@@ -1671,14 +1671,44 @@
     background: linear-gradient(180deg, #FFFFFF 0%, #E9E9EE 38%, #9A9AA4 62%, #F4F4F7 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 2px 0 rgba(200, 27, 28, 0.55)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.8)); }
   #loader .ld-i { position: relative; opacity: 1; color: transparent; background: none; filter: none; }
-  #loader .ld-i .stem { position: absolute; left: 50%; bottom: 0.02em; width: 0.17em; height: 0.66em; margin-left: -0.085em; border-radius: 0.04em;
-    background: linear-gradient(180deg, #fff, #b9b9c2); transform-origin: bottom; transform: scaleY(0); }
-  #loader .ld-dot { position: absolute; left: 50%; width: 0.19em; height: 0.19em; margin-left: -0.095em; bottom: 0.8em; border-radius: 50%;
-    background: #fff; box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.55), 0 0 40px 10px rgba(255, 59, 60, 0.35); opacity: 0; }
+  /* The "I" starts as the DevOps infinity loop: it draws itself, a light runs the loop through the 8 stages,
+     then it turns upright and squeezes into the metal I */
+  /* centred, large, white/silver loop with twinkling stars; it later flies into the I's slot */
+  #loader .ld-infwrap { position: absolute; left: 50%; top: 50%; width: min(46vw, 440px); aspect-ratio: 2 / 1; transform: translate(-50%, -50%); pointer-events: none; }
+  #loader .ld-inf { position: absolute; inset: -50% 0; width: 100%; height: 200%; overflow: visible; }
+  #loader .ld-inf path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  #loader .ld-inf .trk { stroke: url(#ldSilver); stroke-width: 1.15; stroke-dasharray: 100; stroke-dashoffset: 100;
+    filter: drop-shadow(0 0 1.2px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 4px rgba(220, 224, 235, 0.6)); }
+  #loader .ld-inf .run { stroke: #fff; stroke-width: 1.7; stroke-dasharray: 14 86; stroke-dashoffset: 0; opacity: 0;
+    filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 5px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 10px rgba(200, 205, 220, 0.7)); }
+  #loader .ld-star { position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px; opacity: 0;
+    background: radial-gradient(circle, #fff 0 14%, transparent 15%),
+      linear-gradient(90deg, transparent 46%, rgba(255,255,255,.95) 50%, transparent 54%),
+      linear-gradient(0deg, transparent 46%, rgba(255,255,255,.95) 50%, transparent 54%);
+    filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px rgba(230, 232, 240, 0.95)); }
+  #loader .ld-stage { position: absolute; left: 50%; top: calc(100% + 18px); transform: translateX(-50%); white-space: nowrap;
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; font-size: clamp(0.72rem, 1.3vw, 0.95rem); letter-spacing: 0.24em; text-transform: uppercase;
+    color: rgba(235, 237, 242, 0.85); opacity: 0; }
+  #loader .ld-stage b { color: #fff; font-weight: 500; text-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
   #loader .ld-stack { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
   #loader .ld-sub { margin-top: 0.5em; padding-left: 0.2em; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-style: italic;
     font-size: clamp(0.95rem, 2.4vw, 1.6rem); letter-spacing: 0.01em; color: #fff; opacity: 0; }
-  #loader .ld-sub::first-letter { color: #FF3B3C; }
+  #loader .ld-sub-1 { color: #FF3B3C; }
+  #loader .ld-caret { display: inline-block; width: 0.5em; height: 0.95em; margin-left: 2px; vertical-align: -0.12em; background: #FF3B3C;
+    box-shadow: 0 0 10px rgba(255, 59, 60, 0.7); animation: ld-blink 0.85s steps(1) infinite; }
+  @keyframes ld-blink { 50% { opacity: 0; } }
+  /* ending: deploy-to-production bar, then the screen splits open along it */
+  #loader .ld-deploy { align-self: stretch; margin-top: 0.9em; font-size: clamp(0.7rem, 1.2vw, 0.85rem); opacity: 0; }
+  #loader .ld-bar { position: relative; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+  #loader .ld-bar i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0);
+    background: linear-gradient(90deg, #9da1ab, #fff 70%, #fff); box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+  #loader .ld-dlab { margin-top: 0.7em; display: flex; justify-content: space-between; gap: 1em; white-space: nowrap;
+    font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(235, 237, 242, 0.7); }
+  #loader .ld-dlab .ok { color: #2ED573; text-shadow: 0 0 8px rgba(46, 213, 115, 0.6); }
+  #loader.splitting { background: transparent; }
+  #loader .ld-half { position: absolute; left: 0; right: 0; background: #000; z-index: 3; }
+  #loader .ld-seam { position: absolute; left: 0; right: 0; height: 2px; z-index: 4; background: #fff;
+    box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.9), 0 0 40px 10px rgba(200, 205, 220, 0.5); }
   #loader canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
   #loader .ld-skip { position: absolute; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center;
     font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255, 255, 255, 0.35); }
@@ -1733,7 +1763,7 @@
 <!-- Opening loader (see "OPENING LOADER" CSS). Removed from the DOM when it finishes. -->
 <div id="loader" aria-hidden="true" hidden>
   <div class="ld-spot"></div>
-  <div class="ld-stack"><div class="ld-word"></div><div class="ld-sub">DevOps Engineer</div></div>
+  <div class="ld-stack"><div class="ld-word"></div><div class="ld-sub">DevOps Engineer</div><div class="ld-deploy"><div class="ld-bar"><i></i></div><div class="ld-dlab"></div></div></div>
   <canvas></canvas>
   <div class="ld-skip">click to skip</div>
 </div>
@@ -1746,25 +1776,99 @@
     var word = el.querySelector('.ld-word'), sub = el.querySelector('.ld-sub'), spot = el.querySelector('.ld-spot'), cv = el.querySelector('canvas');
     var NAME = 'NISHANTH', FINAL = 'PORTFOLIO', I_AT = 1;
     var EXPO = 'cubic-bezier(.16,1,.3,1)', BOUNCE = 'cubic-bezier(.34,1.56,.64,1)';
+    /* ---- Timeline (ms). Every step is defined here; TEMPO scales them all.
+       TEMPO 1 = designed speed · >1 slower · <1 faster. Holds give each word time to be read. ---- */
+    var TEMPO = 1;
+    var T = {
+      spotIn: [0, 900],              // [start, duration]
+      loopDraw: [150, 600],                    // the ∞ draws itself
+      loopRun: [700, 1400], laps: 2,          // light runs the loop; stage names tick past
+      morph: [2150, 800],                      // ∞ flies from centre into the I slot, turns upright and squeezes into it
+      letters: [2750, 820], letterStagger: 110,
+      holdName: 700,                 // NISHANTH fully on screen
+      scramble: [0, 950],            // start is computed: after holdName
+      subIn: [150, 980], subChar: 62,  // relative to scramble end; typed one character at a time
+      holdTitle: 350,                // PORTFOLIO + DevOps Engineer on screen before the deploy bar starts
+      deploy: 1150,                  // "deploying to production" bar fills 0 → 100%
+      holdLive: 380,                 // "✓ live" moment
+      exit: 850,                     // screen splits open along the bar
+      hardStop: 10000
+    };
+    function ms(v) { return Math.round(v * TEMPO); }
+    var LETTERS_END = T.letters[0] + (NAME.length - 1 - I_AT) * T.letterStagger + T.letters[1];
+    T.scramble[0] = LETTERS_END + T.holdName;
+    var SCR_END = T.scramble[0] + T.scramble[1];
+    var SUB_AT = SCR_END + T.subIn[0];
+    var DEPLOY_AT = SUB_AT + T.subIn[1] + T.holdTitle;
+    var FINISH_AT = DEPLOY_AT + T.deploy + T.holdLive;
     var chars = [], anims = [], timers = [], done = false;
     NAME.split('').forEach(function (c, k) {
       var s = document.createElement('span');
-      if (k === I_AT) { s.className = 'ld-ch ld-i'; s.innerHTML = 'I<span class="stem"></span><span class="ld-dot"></span>'; }
+      if (k === I_AT) { s.className = 'ld-ch ld-i'; s.textContent = 'I'; }
       else { s.className = 'ld-ch'; s.textContent = c; }
       word.appendChild(s); chars.push(s);
     });
-    var iEl = chars[I_AT], stem = iEl.querySelector('.stem'), dot = iEl.querySelector('.ld-dot');
+    var iEl = chars[I_AT];
+    var wrap = document.createElement('div'); wrap.className = 'ld-infwrap';
+    wrap.innerHTML = '<svg class="ld-inf" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="ldSilver" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#d9dbe2"/><stop offset=".6" stop-color="#9da1ab"/><stop offset="1" stop-color="#f4f5f8"/></linearGradient></defs>' +
+      '<path class="trk" pathLength="100" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><path class="run" pathLength="100" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/></svg><span class="ld-stage"></span>';
+    el.appendChild(wrap);
+    var inf = wrap.querySelector('.ld-inf'), trk = inf.querySelector('.trk'), runner = inf.querySelector('.run'), stage = wrap.querySelector('.ld-stage');
+    // twinkling silver stars around the loop
+    var stars = [];
+    [[8, 18], [26, 90], [47, 6], [62, 96], [88, 12], [97, 70], [3, 76], [74, 46], [36, 58]].forEach(function (p) {
+      var st = document.createElement('i'); st.className = 'ld-star';
+      st.style.left = p[0] + '%'; st.style.top = p[1] + '%'; st.style.transform = 'scale(' + (0.6 + Math.random() * 0.8) + ')';
+      wrap.appendChild(st); stars.push(st);
+    });
     function a(node, kf, o) { var x = node.animate(kf, Object.assign({ fill: 'forwards' }, o)); anims.push(x); return x; }
     function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
 
     // 1. spotlight
-    a(spot, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 700, easing: EXPO });
-    // 2. glowing dot drops in from the top and lands above the I
-    at(200, function () { a(dot, [{ opacity: 1, transform: 'translateY(-55vh)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 520, easing: BOUNCE }); });
-    // 3. the stem grows under it → "I" (reads as "!" for a beat)
-    at(720, function () { a(stem, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { duration: 300, easing: EXPO }); });
+    a(spot, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1)' }], { duration: ms(T.spotIn[1]), delay: ms(T.spotIn[0]), easing: EXPO });
+    // 2. the DevOps infinity loop draws itself where the I will be
+    at(ms(T.loopDraw[0]), function () {
+      a(trk, [{ strokeDashoffset: 100 }, { strokeDashoffset: 0 }], { duration: ms(T.loopDraw[1]), easing: 'cubic-bezier(.45,0,.2,1)' });
+      stars.forEach(function (st, k) {
+        a(st, [{ opacity: 0, scale: '0.3', rotate: '0deg' }, { opacity: 1, scale: '1', rotate: '45deg', offset: 0.5 }, { opacity: 0, scale: '0.3', rotate: '90deg' }],
+          { duration: ms(1100 + (k % 3) * 300), delay: ms(150 + k * 210), iterations: Infinity, easing: 'ease-in-out' });
+      });
+    });
+    // 3. a light runs the loop; the eight DevOps stages tick past underneath
+    var STAGES = ['plan', 'code', 'build', 'test', 'release', 'deploy', 'operate', 'monitor'];
+    at(ms(T.loopRun[0]), function () {
+      runner.style.opacity = 1;
+      a(runner, [{ strokeDashoffset: 0 }, { strokeDashoffset: -100 * T.laps }], { duration: ms(T.loopRun[1]), easing: 'linear' });
+      a(stage, [{ opacity: 0 }, { opacity: 1 }], { duration: ms(250) });
+      var per = T.loopRun[1] / T.laps / STAGES.length;
+      for (var n = 0; n < STAGES.length * T.laps; n++) (function (n) {
+        at(ms(T.loopRun[0] + n * per), function () {
+          var s = STAGES[n % STAGES.length];
+          stage.innerHTML = (n >= STAGES.length ? '<b>✓</b> ' : '<b>›</b> ') + s;
+        });
+      })(n);
+    });
+    // 3b. the loop turns upright, squeezes into a bar and becomes the metal I
+    at(ms(T.morph[0]), function () {
+      a(stage, [{ opacity: 1 }, { opacity: 0 }], { duration: ms(250) });
+      stars.forEach(function (st) { a(st, [{ opacity: getComputedStyle(st).opacity }, { opacity: 0 }], { duration: ms(250), fill: 'forwards' }); });
+      var w = wrap.getBoundingClientRect(), r = iEl.getBoundingClientRect();
+      var dx = (r.left + r.width / 2) - (w.left + w.width / 2), dy = (r.top + r.height / 2) - (w.top + w.height / 2);
+      var s = (r.height * 1.05) / w.width;       // loop width shrinks to the I's height (it is rotated upright)
+      a(wrap, [
+        { transform: 'translate(-50%, -50%) rotate(0deg) scale(1)', opacity: 1 },
+        { transform: 'translate(calc(-50% + ' + dx * 0.55 + 'px), calc(-50% + ' + dy * 0.55 + 'px)) rotate(90deg) scale(' + Math.max(s, 0.5) + ')', opacity: 1, offset: 0.5 },
+        { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) rotate(90deg) scale(' + s + ', ' + s * 0.18 + ')', opacity: 1, offset: 0.85 },
+        { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) rotate(90deg) scale(' + s + ', ' + s * 0.1 + ')', opacity: 0 }
+      ], { duration: ms(T.morph[1]), easing: EXPO });
+      at(ms(T.morph[1] * 0.8), function () {   // reveal the I as the loop lands in its slot
+        iEl.classList.remove('ld-i');
+        a(iEl, [{ opacity: 0, filter: 'brightness(2.2) blur(2px)' }, { opacity: 1, filter: 'none' }], { duration: ms(T.morph[1] * 0.6), easing: EXPO });
+      });
+    });
     // 4. the other letters flip in, in 3D, around the I
-    at(1000, function () {
+    at(ms(T.letters[0]), function () {
       chars.forEach(function (s, k) {
         if (k === I_AT) return;
         var side = k < I_AT ? -1 : 1, d = Math.abs(k - I_AT);
@@ -1772,46 +1876,79 @@
           { opacity: 0, transform: 'translate3d(' + (side * (40 + d * 18)) + 'px,' + (-60 + (k % 2) * 120) + 'px,-260px) rotateX(' + (k % 2 ? 110 : -110) + 'deg) rotateY(' + (side * 70) + 'deg)' },
           { opacity: 1, offset: 0.55 },
           { opacity: 1, transform: 'none' }
-        ], { duration: 620, delay: d * 70, easing: EXPO });
+        ], { duration: ms(T.letters[1]), delay: ms(d * T.letterStagger), easing: EXPO });
       });
     });
-    // 4b. once settled, the dot fades into the letter
-    at(1850, function () { a(dot, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 }); a(stem, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 }); iEl.classList.remove('ld-i'); iEl.style.opacity = 1; });
     // 5. scramble NISHANTH → PORTFOLIO
-    at(2050, function () {
-      var GLYPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*01', t0 = performance.now(), L = FINAL.length;
+    at(ms(T.scramble[0]), function () {
+      var GLYPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*01', L = FINAL.length;
       while (chars.length < L) { var s = document.createElement('span'); s.className = 'ld-ch'; s.style.opacity = 1; word.appendChild(s); chars.push(s); }
       chars.forEach(function (s) { s.getAnimations().forEach(function (x) { x.cancel(); }); s.style.opacity = 1; s.style.transform = 'none'; });
-      (function tick(now) {
+      // fixed-step timer (same clock as the rest of the timeline): letters lock in left to right
+      var STEP = 45, steps = Math.max(1, Math.round(ms(T.scramble[1]) / STEP)), n = 0;
+      (function tick() {
         if (done) return;
-        var p = Math.min(1, (now - t0) / 520);
+        var p = Math.min(1, ++n / steps);
         for (var k = 0; k < L; k++) chars[k].textContent = p * L > k + 0.6 ? FINAL[k] : GLYPH[(Math.random() * GLYPH.length) | 0];
-        if (p < 1) requestAnimationFrame(tick);
-      })(t0);
+        if (p < 1) at(STEP, tick);
+      })();
     });
     // 6. static-noise dissolve, then reveal the page
     // 5b. subtitle slides in under PORTFOLIO
-    at(2620, function () { a(sub, [{ opacity: 0, transform: 'translateY(10px)', filter: 'blur(4px)' }, { opacity: 1, transform: 'none', filter: 'none' }], { duration: 480, easing: EXPO }); });
-    at(3350, noise);
-    at(3750, finish);
-
-    function noise() {
-      var g = cv.getContext('2d'), w = cv.width = Math.ceil(innerWidth / 3), h = cv.height = Math.ceil(innerHeight / 3), img = g.createImageData(w, h), t0 = performance.now();
-      cv.style.imageRendering = 'pixelated';
-      a(cv, [{ opacity: 0 }, { opacity: 0.85, offset: 0.4 }, { opacity: 0.55 }], { duration: 400 });
-      (function frame(now) {
+    // 5a. guarantee the scramble lands on PORTFOLIO even if animation frames are throttled (background tab)
+    at(ms(SCR_END), function () { for (var k = 0; k < FINAL.length; k++) if (chars[k]) chars[k].textContent = FINAL[k]; });
+    // 5b. "DevOps Engineer" types itself out under PORTFOLIO, with a blinking caret
+    at(ms(SUB_AT), function () {
+      var text = sub.textContent, k = 0;
+      sub.textContent = '';
+      var typed = document.createElement('span'), caret = document.createElement('span');
+      caret.className = 'ld-caret';
+      sub.appendChild(typed); sub.appendChild(caret);
+      sub.style.opacity = 1;
+      a(sub, [{ transform: 'translateY(8px)' }, { transform: 'none' }], { duration: ms(300), easing: EXPO });
+      (function type() {
         if (done) return;
-        for (var j = 0; j < img.data.length; j += 4) { var v = Math.random() * 255 | 0; img.data[j] = img.data[j + 1] = img.data[j + 2] = v; img.data[j + 3] = 255; }
-        g.putImageData(img, 0, 0);
-        if (now - t0 < 420) requestAnimationFrame(frame);
-      })(t0);
-      a(word, [{ filter: 'none' }, { filter: 'blur(3px) brightness(1.6)' }], { duration: 400 }); a(sub, [{ opacity: 1 }, { opacity: 0.3, filter: 'blur(2px)' }], { duration: 400 });
+        k++;
+        typed.innerHTML = '<span class="ld-sub-1">' + text.charAt(0) + '</span>' + text.slice(1, k);
+        if (k < text.length) at(ms(T.subChar + (text.charAt(k) === ' ' ? 60 : Math.random() * 30)), type);
+      })();
+    });
+    at(ms(DEPLOY_AT), deploy);
+    at(ms(FINISH_AT), finish);
+
+    // 6. deploy to production: a bar fills under the title, the label counts up, then "✓ live"
+    var dep = el.querySelector('.ld-deploy'), barFill = el.querySelector('.ld-bar i'), dlab = el.querySelector('.ld-dlab');
+    function deploy() {
+      dep.style.opacity = 1;
+      a(dep, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: ms(300), easing: EXPO });
+      a(barFill, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(.62)', offset: 0.55 }, { transform: 'scaleX(.9)', offset: 0.8 }, { transform: 'scaleX(1)' }],
+        { duration: ms(T.deploy), easing: 'cubic-bezier(.4,0,.2,1)' });
+      var steps = 20;
+      for (var n = 0; n <= steps; n++) (function (n) {
+        at(ms(T.deploy * n / steps), function () {
+          var pct = Math.round(100 * Math.min(1, n / steps));
+          dlab.innerHTML = n < steps ? '<span>deploying to production …</span><span>' + pct + '%</span>'
+                                     : '<span class="ok">✓ live</span><span>100%</span>';
+        });
+      })(n);
     }
     function finish() {
       if (done) return; done = true;
       timers.forEach(clearTimeout);
       try { sessionStorage.setItem('ldSeen', '1'); } catch (e) {}
-      var out = el.animate([{ opacity: 1, clipPath: 'inset(0 0 0 0)' }, { opacity: 0, clipPath: 'inset(50% 0 50% 0)' }], { duration: 500, easing: EXPO, fill: 'forwards' });
+      // split the black screen open along the deploy bar (or the middle, if skipped early)
+      var y = dep.style.opacity === '1' ? dep.getBoundingClientRect().top : innerHeight / 2;
+      var top = document.createElement('div'), bot = document.createElement('div'), seam = document.createElement('div');
+      top.className = bot.className = 'ld-half'; seam.className = 'ld-seam';
+      top.style.top = '0'; top.style.height = y + 'px';
+      bot.style.top = y + 'px'; bot.style.bottom = '0';
+      seam.style.top = (y - 1) + 'px';
+      el.appendChild(top); el.appendChild(bot); el.appendChild(seam);
+      el.classList.add('splitting');
+      [].forEach.call(el.querySelectorAll('.ld-spot, .ld-stack, canvas, .ld-skip, .ld-infwrap'), function (n) { n.style.visibility = 'hidden'; });
+      seam.animate([{ opacity: 0, transform: 'scaleX(0)' }, { opacity: 1, transform: 'scaleX(1)', offset: 0.25 }, { opacity: 0, transform: 'scaleX(1)' }], { duration: ms(T.exit), easing: EXPO, fill: 'forwards' });
+      top.animate([{ transform: 'none' }, { transform: 'translateY(-100%)' }], { duration: ms(T.exit), delay: ms(120), easing: EXPO, fill: 'forwards' });
+      var out = bot.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: ms(T.exit), delay: ms(120), easing: EXPO, fill: 'forwards' });
       root.classList.remove('loading');
       window.__loaderActive = false;
       document.dispatchEvent(new Event('loaderdone'));
@@ -1819,7 +1956,7 @@
     }
     el.addEventListener('click', finish);
     addEventListener('keydown', function k() { finish(); removeEventListener('keydown', k); });
-    at(6000, finish);   // hard stop, whatever happens
+    at(ms(T.hardStop), finish);   // hard stop, whatever happens
   })();
 </script>
 
