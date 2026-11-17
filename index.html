@@ -3,22 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Nishanth M — DevOps Engineer</title>
+<title>Nishanth M — DevOps Engineer | SRE</title>
+<link rel="canonical" href="https://mnishanth23.github.io/">
+<meta name="author" content="Nishanth M">
+<meta name="robots" content="index, follow">
 <meta name="description" content="Nishanth M — Associate DevOps Engineer | SRE. CI/CD, observability, databases and messaging, and GPU LLM/OCR inference serving, with minimum-failure production deployments.">
 <meta name="theme-color" content="#000000">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Nishanth M — DevOps Engineer">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Nishanth M — DevOps Engineer | SRE">
 <meta property="og:description" content="I keep deployments boring and incidents short. DevOps / SRE portfolio — CI/CD, observability, and GPU LLM/OCR inference serving.">
 <meta property="og:url" content="https://mnishanth23.github.io/">
-<meta property="og:image" content="https://mnishanth23.github.io/banner.jpg">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Nishanth M — DevOps Engineer portfolio: I keep deployments boring and incidents short.">
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Nishanth M — DevOps Engineer">
+<meta name="twitter:title" content="Nishanth M — DevOps Engineer | SRE">
 <meta name="twitter:description" content="I keep deployments boring and incidents short.">
-<meta name="twitter:image" content="https://mnishanth23.github.io/banner.jpg">
+<meta name="twitter:image" content="https://mnishanth23.github.io/og.png">
 
 <!-- Favicon -->
 <link rel="icon" type="image/png" href="favicon.png">
@@ -28,6 +35,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
+<link rel="stylesheet" href="assets/terminal.css">
+<link rel="stylesheet" href="assets/live.css">
 <style>
   :root {
     --bg: #000;
@@ -1646,6 +1655,36 @@
   html[data-theme="light"] .ci-stages li.run { border-color: #B26A00; }
   html[data-theme="light"] .mq-node.broker { border-color: #B3161A; }
   html[data-theme="light"] .gd-bar, html[data-theme="light"] .bg-split, html[data-theme="light"] .obs-vol { box-shadow: inset 0 0 0 1px rgba(15, 18, 30, 0.3); }
+
+  /* =====================================================================
+     OPENING LOADER: spotlight → falling dot → "I" → NISHANTH flips in (3D)
+     → scrambles to PORTFOLIO → static-noise dissolve → hero.
+     Once per browser session; click / key / Esc skips; reduced motion skips.
+     ===================================================================== */
+  #loader { position: fixed; inset: 0; z-index: 9999; background: #000; display: grid; place-items: center; overflow: hidden; cursor: pointer; }
+  #loader[hidden] { display: none; }
+  #loader .ld-spot { position: absolute; left: 50%; top: 50%; width: 70vmin; height: 70vmin; margin: -35vmin 0 0 -35vmin; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.10), rgba(200, 27, 28, 0.06) 45%, transparent 75%); opacity: 0; }
+  #loader .ld-word { position: relative; display: flex; align-items: flex-end; perspective: 700px;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; font-weight: 700; font-size: clamp(2.6rem, 11vw, 8rem); line-height: 1; letter-spacing: -0.02em; }
+  #loader .ld-ch { display: inline-block; transform-style: preserve-3d; opacity: 0;
+    background: linear-gradient(180deg, #FFFFFF 0%, #E9E9EE 38%, #9A9AA4 62%, #F4F4F7 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(200, 27, 28, 0.55)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.8)); }
+  #loader .ld-i { position: relative; opacity: 1; color: transparent; background: none; filter: none; }
+  #loader .ld-i .stem { position: absolute; left: 50%; bottom: 0.02em; width: 0.17em; height: 0.66em; margin-left: -0.085em; border-radius: 0.04em;
+    background: linear-gradient(180deg, #fff, #b9b9c2); transform-origin: bottom; transform: scaleY(0); }
+  #loader .ld-dot { position: absolute; left: 50%; width: 0.19em; height: 0.19em; margin-left: -0.095em; bottom: 0.8em; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.55), 0 0 40px 10px rgba(255, 59, 60, 0.35); opacity: 0; }
+  #loader canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+  #loader .ld-skip { position: absolute; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center;
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255, 255, 255, 0.35); }
+  html.loading body { overflow: hidden; }
+
+  /* Hero terminal + live GitHub panel */
+  .hero-term { margin-top: 28px; max-width: 560px; }
+  .live-slot { margin-top: 28px; }
+  .live-slot .lv-panel { max-width: none; }
+  @media (max-width: 760px) { .hero-term { margin-top: 22px; } }
 </style>
 <script>
   // Arm the entrance before first paint so the finished page never flashes.
@@ -1663,6 +1702,7 @@
     }
     if (Element.prototype.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       d.classList.add('intro');
+      try { if (!sessionStorage.getItem('ldSeen') && !location.hash) d.classList.add('loading'); } catch (e) {}
     }
   })();
 </script>
@@ -1674,7 +1714,7 @@
   "name": "Nishanth M",
   "jobTitle": "Associate DevOps Engineer | SRE",
   "url": "https://mnishanth23.github.io/",
-  "image": "https://mnishanth23.github.io/banner.jpg",
+  "image": "https://mnishanth23.github.io/logo.png",
   "email": "mailto:imnishanth23@gmail.com",
   "address": { "@type": "PostalAddress", "addressLocality": "Rajapalayam", "addressRegion": "Tamil Nadu", "addressCountry": "IN" },
   "sameAs": [
@@ -1686,6 +1726,96 @@
 </script>
 </head>
 <body>
+<!-- Opening loader (see "OPENING LOADER" CSS). Removed from the DOM when it finishes. -->
+<div id="loader" aria-hidden="true" hidden>
+  <div class="ld-spot"></div>
+  <div class="ld-word"></div>
+  <canvas></canvas>
+  <div class="ld-skip">click to skip</div>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement, el = document.getElementById('loader');
+    if (!root.classList.contains('loading') || !Element.prototype.animate) { el.remove(); root.classList.remove('loading'); return; }
+    el.hidden = false;
+    window.__loaderActive = true;
+    var word = el.querySelector('.ld-word'), spot = el.querySelector('.ld-spot'), cv = el.querySelector('canvas');
+    var NAME = 'NISHANTH', FINAL = 'PORTFOLIO', I_AT = 1;
+    var EXPO = 'cubic-bezier(.16,1,.3,1)', BOUNCE = 'cubic-bezier(.34,1.56,.64,1)';
+    var chars = [], anims = [], timers = [], done = false;
+    NAME.split('').forEach(function (c, k) {
+      var s = document.createElement('span');
+      if (k === I_AT) { s.className = 'ld-ch ld-i'; s.innerHTML = 'I<span class="stem"></span><span class="ld-dot"></span>'; }
+      else { s.className = 'ld-ch'; s.textContent = c; }
+      word.appendChild(s); chars.push(s);
+    });
+    var iEl = chars[I_AT], stem = iEl.querySelector('.stem'), dot = iEl.querySelector('.ld-dot');
+    function a(node, kf, o) { var x = node.animate(kf, Object.assign({ fill: 'forwards' }, o)); anims.push(x); return x; }
+    function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+
+    // 1. spotlight
+    a(spot, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 700, easing: EXPO });
+    // 2. glowing dot drops in from the top and lands above the I
+    at(200, function () { a(dot, [{ opacity: 1, transform: 'translateY(-55vh)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 520, easing: BOUNCE }); });
+    // 3. the stem grows under it → "I" (reads as "!" for a beat)
+    at(720, function () { a(stem, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { duration: 300, easing: EXPO }); });
+    // 4. the other letters flip in, in 3D, around the I
+    at(1000, function () {
+      chars.forEach(function (s, k) {
+        if (k === I_AT) return;
+        var side = k < I_AT ? -1 : 1, d = Math.abs(k - I_AT);
+        a(s, [
+          { opacity: 0, transform: 'translate3d(' + (side * (40 + d * 18)) + 'px,' + (-60 + (k % 2) * 120) + 'px,-260px) rotateX(' + (k % 2 ? 110 : -110) + 'deg) rotateY(' + (side * 70) + 'deg)' },
+          { opacity: 1, offset: 0.55 },
+          { opacity: 1, transform: 'none' }
+        ], { duration: 620, delay: d * 70, easing: EXPO });
+      });
+    });
+    // 4b. once settled, the dot fades into the letter
+    at(1850, function () { a(dot, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 }); a(stem, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 }); iEl.classList.remove('ld-i'); iEl.style.opacity = 1; });
+    // 5. scramble NISHANTH → PORTFOLIO
+    at(2050, function () {
+      var GLYPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*01', t0 = performance.now(), L = FINAL.length;
+      while (chars.length < L) { var s = document.createElement('span'); s.className = 'ld-ch'; s.style.opacity = 1; word.appendChild(s); chars.push(s); }
+      chars.forEach(function (s) { s.getAnimations().forEach(function (x) { x.cancel(); }); s.style.opacity = 1; s.style.transform = 'none'; });
+      (function tick(now) {
+        if (done) return;
+        var p = Math.min(1, (now - t0) / 520);
+        for (var k = 0; k < L; k++) chars[k].textContent = p * L > k + 0.6 ? FINAL[k] : GLYPH[(Math.random() * GLYPH.length) | 0];
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+    });
+    // 6. static-noise dissolve, then reveal the page
+    at(2750, noise);
+    at(3150, finish);
+
+    function noise() {
+      var g = cv.getContext('2d'), w = cv.width = Math.ceil(innerWidth / 3), h = cv.height = Math.ceil(innerHeight / 3), img = g.createImageData(w, h), t0 = performance.now();
+      cv.style.imageRendering = 'pixelated';
+      a(cv, [{ opacity: 0 }, { opacity: 0.85, offset: 0.4 }, { opacity: 0.55 }], { duration: 400 });
+      (function frame(now) {
+        if (done) return;
+        for (var j = 0; j < img.data.length; j += 4) { var v = Math.random() * 255 | 0; img.data[j] = img.data[j + 1] = img.data[j + 2] = v; img.data[j + 3] = 255; }
+        g.putImageData(img, 0, 0);
+        if (now - t0 < 420) requestAnimationFrame(frame);
+      })(t0);
+      a(word, [{ filter: 'none' }, { filter: 'blur(3px) brightness(1.6)' }], { duration: 400 });
+    }
+    function finish() {
+      if (done) return; done = true;
+      timers.forEach(clearTimeout);
+      try { sessionStorage.setItem('ldSeen', '1'); } catch (e) {}
+      var out = el.animate([{ opacity: 1, clipPath: 'inset(0 0 0 0)' }, { opacity: 0, clipPath: 'inset(50% 0 50% 0)' }], { duration: 500, easing: EXPO, fill: 'forwards' });
+      root.classList.remove('loading');
+      window.__loaderActive = false;
+      document.dispatchEvent(new Event('loaderdone'));
+      out.onfinish = function () { anims.forEach(function (x) { x.cancel(); }); el.remove(); };
+    }
+    el.addEventListener('click', finish);
+    addEventListener('keydown', function k() { finish(); removeEventListener('keydown', k); });
+    at(6000, finish);   // hard stop, whatever happens
+  })();
+</script>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="arrow" viewBox="0 0 22 18"><path d="M0 9H20.1M12.1 1L20.1 9L12.1 17" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
@@ -1739,6 +1869,7 @@
             <a href="#contact" class="btn btn-red">Get in touch <svg><use href="#arrow"/></svg></a>
             <a href="#projects" class="btn btn-line">See my work <svg><use href="#arrow"/></svg></a>
           </div>
+          <div id="term" class="hero-term"></div>
         </div>
 
         <div class="avatar" id="avatar">
@@ -1848,7 +1979,7 @@
         <h2>Things I've built</h2>
       </div>
       <div class="project-grid">
-        <a class="project-card" href="https://github.com/mnishanth23/blue-green-azure" target="_blank" rel="noopener">
+        <a class="project-card" href="projects/blue-green-aks.html">
           <div class="project-top"><span class="project-num">P—01</span><span class="project-kind"><b>Learning project</b> · in progress</span></div>
           <h3>Blue-green deployments on AKS</h3>
           <p>A personal learning project (started Sept 2026) following a 13-phase plan on a free Azure account: blue-green releases on AKS, infrastructure in Terraform, images in ACR, progressive promotion with Argo Rollouts and Prometheus analysis, Azure Front Door in front, and GitHub Actions for CI.</p>
@@ -1863,9 +1994,9 @@
             <div class="gd-note">Simulated demo, not production data</div>
           </div>
           <div class="project-tags"><span>Terraform</span><span>AKS</span><span>ACR</span><span>Argo Rollouts</span><span>Prometheus</span><span>Azure Front Door</span><span>GitHub Actions</span></div>
-          <span class="link-label">View on GitHub <span class="arr">↗</span></span>
+          <span class="link-label">Read case study <span class="arr">→</span></span>
         </a>
-        <div class="project-card">
+        <a class="project-card" href="projects/drone-pipeline-hardening.html">
           <div class="project-top"><span class="project-num">P—02</span><span class="project-kind">Work · private</span></div>
           <h3>Drone CI pipeline hardening</h3>
           <p>Migrated CI/CD from Jenkins to Drone CI. Pipelines build images with Kaniko, push to Harbor, scan with Trivy and deploy over SSH through a jump host with tag-based rollback. Added post-deploy health checks, blocking scans for stage, concurrency limits, manual gates before stage and failure notifications.</p>
@@ -1875,11 +2006,11 @@
               <li>clone</li><li>kaniko</li><li>harbor</li><li>trivy</li><li>gate</li><li>deploy</li><li>health</li>
             </ol>
             <div class="gd-note">Simulated demo, not production data</div>
-          </div>
+          </a>
           <div class="project-tags"><span>Drone CI</span><span>Jenkins</span><span>Kaniko</span><span>Harbor</span><span>Trivy</span></div>
-          <span class="link-label private">Private work project</span>
+          <span class="link-label">Read case study <span class="arr">→</span></span>
         </div>
-        <div class="project-card">
+        <a class="project-card" href="projects/messaging-data-stack.html">
           <div class="project-top"><span class="project-num">P—03</span><span class="project-kind">Work · private</span></div>
           <h3>Messaging and data stack in Docker Compose</h3>
           <p>Containerised ActiveMQ Classic with embedded, versioned config and converted the Karaf setup script to Docker Compose. Set up Apache NiFi 2 and Apache Superset on devlab, wired to the existing broker and the Postgres data-engine database.</p>
@@ -1889,14 +2020,14 @@
               <span class="mq-node">NiFi</span><span class="mq-link" aria-hidden="true"><i></i><i></i></span>
               <span class="mq-node">Postgres</span><span class="mq-link" aria-hidden="true"><i></i><i></i></span>
               <span class="mq-node">Superset</span>
-            </div>
+            </a>
             <div class="sim-meta"><span data-v="depth">queue depth 18</span><span data-v="rate">142 msg/s</span></div>
             <div class="gd-note">Simulated demo, not production data</div>
           </div>
           <div class="project-tags"><span>ActiveMQ Classic</span><span>Apache Karaf/Camel</span><span>Apache NiFi</span><span>Apache Superset</span><span>PostgreSQL</span><span>Docker Compose</span></div>
-          <span class="link-label private">Private work project</span>
+          <span class="link-label">Read case study <span class="arr">→</span></span>
         </div>
-        <a class="project-card" href="https://github.com/mnishanth23/elk-log-simulator" target="_blank" rel="noopener">
+        <a class="project-card" href="projects/observability-capacity.html">
           <div class="project-top"><span class="project-num">P—04</span><span class="project-kind">Work · plus public repo</span></div>
           <h3>Observability and capacity</h3>
           <p>Cut Prometheus retention from 1 year to 90 days to end a disk-space crisis, freeing about 108 GB (127 GB → 14 GB). Upgraded dev Elasticsearch and Kibana from 7.11.2 to 7.17.28; 8.x is next. Plus the ELK Log Simulator: Fluent Bit parsing into Elasticsearch to test ingestion without live data.</p>
@@ -1907,9 +2038,9 @@
             <div class="gd-note">Simulated demo, not production data</div>
           </div>
           <div class="project-tags"><span>Prometheus</span><span>Grafana</span><span>Elasticsearch</span><span>Kibana</span><span>Uptime Kuma</span><span>Fluent Bit</span></div>
-          <span class="link-label">ELK Log Simulator on GitHub <span class="arr">↗</span></span>
+          <span class="link-label">Read case study <span class="arr">→</span></span>
         </a>
-        <div class="project-card">
+        <a class="project-card" href="projects/gpu-llm-ocr-serving.html">
           <div class="project-top"><span class="project-num">P—05</span><span class="project-kind">Work · private</span></div>
           <h3>GPU LLM/OCR serving with vLLM on A100</h3>
           <p>Deployed and operate vLLM model-serving containers on an NVIDIA A100 server for the document-processing (IDP) platform, and tuned Docker-based LLM/OCR inference containers: LightOnOCR, Chandra OCR and quantized Llama 3.1. GPU monitoring with the DCGM exporter, Prometheus and Grafana.</p>
@@ -1917,11 +2048,11 @@
             <div class="gd-row"><span class="gd-k">GPU util</span><span class="gd-bar"><i data-gd="bar"></i></span><span class="gd-v" data-gd-v="bar"></span></div>
             <div class="gd-row"><span class="gd-k">Req/s</span><svg class="gd-spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true"><polyline data-gd="spark" points=""/></svg><span class="gd-v" data-gd-v="spark"></span></div>
             <div class="gd-note">Simulated demo, not production data</div>
-          </div>
+          </a>
           <div class="project-tags"><span>vLLM</span><span>NVIDIA A100</span><span>DCGM exporter</span><span>Prometheus</span><span>Grafana</span><span>Docker</span></div>
-          <span class="link-label private">Private work project</span>
+          <span class="link-label">Read case study <span class="arr">→</span></span>
         </div>
-        <a class="project-card" href="https://github.com/mnishanth23/LSTM-Based-Phishing-Detection-for-big-E-mail-Data" target="_blank" rel="noopener">
+        <a class="project-card" href="projects/lstm-phishing-detection.html">
           <div class="project-top"><span class="project-num">P—06</span><span class="project-kind">Academic · ICRTSET 2K23</span></div>
           <h3>LSTM-Based Phishing Detection for Big E-mail Data</h3>
           <p>Designed an LSTM deep-learning model for large-scale spam and phishing e-mail detection with scalable preprocessing pipelines. Presented at the ICRTSET 2K23 International Conference.</p>
@@ -1931,9 +2062,10 @@
             <div class="gd-note">Simulated demo, not production data</div>
           </div>
           <div class="project-tags"><span>Python</span><span>TensorFlow</span><span>Keras</span><span>LSTM</span></div>
-          <span class="link-label">View on GitHub <span class="arr">↗</span></span>
+          <span class="link-label">Read case study <span class="arr">→</span></span>
         </a>
       </div>
+      <div id="live-github" class="live-slot" data-heading-level="3"></div>
       </div>
     </section>
 
@@ -2068,6 +2200,7 @@
 <footer>
   <div class="wrap">
     <span>© 2026 Nishanth M</span>
+    <span id="status-pill"></span>
     <span>DevOps Engineer | SRE</span>
   </div>
 </footer>
@@ -2145,7 +2278,8 @@
       started = true;
       requestAnimationFrame(runIntro);
     }
-    startIntro();   // don't wait for web fonts: text swaps in when they arrive
+    // don't wait for web fonts; but if the opening loader is playing, start when it ends
+    if (window.__loaderActive) document.addEventListener('loaderdone', startIntro, { once: true }); else startIntro();
 
     /* ---------- Scroll reveal ---------- */
     var revealEls = document.querySelectorAll('.reveal');
@@ -2323,8 +2457,7 @@
       }).catch(function () { /* no model: the slot stays empty and the 3D rack shows through */ });
     }
 
-    if (document.readyState === 'complete') loadAvatar();
-    else window.addEventListener('load', loadAvatar);
+    // 3D avatar loader kept for later: call loadAvatar() once avatar.glb is added to the repo.
   })();
 </script>
 
@@ -2821,7 +2954,7 @@
       // ---- Layout: hero-camera screen slots -> world positions
       var heroCam = new THREE.PerspectiveCamera(35, 1, 0.1, 40);
       var camRight = new THREE.Vector3(), camUp = new THREE.Vector3();
-      var clearEls = ['.hero-role', '.hero h1', '.hero-blurb', '.hero-actions', '.stats'].map(function (q) { return document.querySelector(q); });
+      var clearEls = ['.hero-role', '.hero h1', '.hero-blurb', '.hero-actions', '.hero-term', '.stats'].map(function (q) { return document.querySelector(q); });
       var clearRange = document.createRange();
       // True when a tile at NDC (x, y) clears every text box (using its full
       // motion reach rw/rh) and every previously placed tile (using its body bw/bh).
@@ -3695,6 +3828,15 @@
       waiting = waiting.filter(function (el) { if (ready(el)) { show(el); return false; } return true; });
     }).observe(document.querySelector('main') || document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
   })();
+</script>
+<script src="assets/live.js" defer></script>
+<script src="assets/terminal.js" defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.initTerminal) initTerminal(document.getElementById('term'));
+    if (window.initLive) initLive(document.getElementById('live-github'));
+    if (window.initStatusPill) initStatusPill(document.getElementById('status-pill'));
+  });
 </script>
 </body>
 </html>

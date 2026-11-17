@@ -1,0 +1,86 @@
+/* =========================================================================
+   Project case studies → main-site look.
+   Loaded after ../blog/assets/style.css and ../blog/assets/site.css.
+   Adds glass + rounded corners to the project-only furniture (hero banner,
+   meta row, diagram, demo panel, before/after bars) and the light-theme
+   variants that style.css (dark-only) doesn't have.
+   ========================================================================= */
+
+/* ---------- Shapes: match the rounded, glassy homepage ---------- */
+.proj-banner.card-media { border-radius: 22px 22px 0 0; border-color: var(--lg-edge); }
+.meta-row {
+  border-radius: 0 0 22px 22px; border-color: var(--lg-edge);
+  background: var(--lg-sheen), var(--lg-tint);
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+  box-shadow: var(--lg-rim), var(--lg-drop);
+}
+.diagram, .gpu-demo, .ba, .phase-track { border-radius: 22px; overflow: hidden; }
+.diagram { border-color: var(--lg-edge); box-shadow: var(--lg-rim), var(--lg-drop); }
+.gpu-demo, .ba {
+  background: var(--lg-sheen), var(--lg-tint);
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+  border: 1px solid var(--lg-edge); box-shadow: var(--lg-rim), var(--lg-drop);
+}
+.ba-track, .ba-bar, .gpu-meter { border-radius: 999px; }
+.gpu-demo-toggle { border-radius: 999px; }
+.cta-band { border-radius: 26px; border-color: var(--lg-edge);
+  background: var(--lg-sheen), var(--lg-tint);
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+  box-shadow: var(--lg-rim), var(--lg-drop); }
+.badge { border-radius: 999px; }
+.badge::before { border-radius: 50%; }
+.card-media .badge { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+
+/* ===================== LIGHT THEME ===================== */
+html[data-theme="light"] .badge--progress { color: var(--text); border-color: rgba(211, 32, 31, .45); }
+html[data-theme="light"] .badge--academic::before { background: var(--text); }
+html[data-theme="light"] .card-media .badge { background: rgba(255, 255, 255, .85); }
+html[data-theme="light"] .proj-banner .g-box { fill: #FFFFFF; stroke: rgba(15, 18, 30, .55); }
+html[data-theme="light"] .g-txt { fill: var(--body); }
+html[data-theme="light"] .g-hot { stroke: var(--red-hi); }
+
+/* Diagram frame: light ground with a faint grid */
+html[data-theme="light"] .diagram { background: #F7F8FA; }
+html[data-theme="light"] .diagram-frame {
+  background:
+    radial-gradient(50% 70% at 90% 0%, rgba(211, 32, 31, .07), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(15, 18, 30, .045) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(0deg, rgba(15, 18, 30, .045) 0 1px, transparent 1px 40px);
+}
+html[data-theme="light"] .diagram figcaption { border-top-color: var(--line); }
+
+/* SVG diagram vocabulary, light variants (modifiers repeated so they win) */
+html[data-theme="light"] .d-box { fill: #FFFFFF; stroke: rgba(15, 18, 30, .30); }
+html[data-theme="light"] .d-box--accent { stroke: var(--red-hi); }
+html[data-theme="light"] .d-box--ok { stroke: var(--ok); }
+html[data-theme="light"] .d-box--ghost { fill: none; stroke: rgba(15, 18, 30, .28); }
+html[data-theme="light"] .d-label { fill: var(--text); }
+html[data-theme="light"] .d-sub { fill: #555A66; }
+html[data-theme="light"] .d-tag, html[data-theme="light"] .d-num { fill: var(--red-hi); }
+html[data-theme="light"] .d-arrow { stroke: rgba(15, 18, 30, .50); }
+html[data-theme="light"] .d-arrow--accent { stroke: var(--red-hi); }
+html[data-theme="light"] .d-dash { stroke: rgba(15, 18, 30, .45); }
+html[data-theme="light"] .d-head { fill: rgba(15, 18, 30, .65); }
+html[data-theme="light"] .d-head--accent { fill: var(--red-hi); }
+
+/* Before/after bars */
+html[data-theme="light"] .ba-track { background: rgba(15, 18, 30, .07); }
+
+/* Phase track */
+html[data-theme="light"] .phase-track { background: var(--line); }
+
+/* GPU demo panel */
+html[data-theme="light"] .gpu-demo-flag {
+  border-bottom-color: rgba(211, 32, 31, .35);
+  background: repeating-linear-gradient(135deg, rgba(211, 32, 31, .10) 0 10px, rgba(211, 32, 31, .05) 10px 20px);
+}
+html[data-theme="light"] .gpu-demo-flag strong { color: #A3151A; }
+html[data-theme="light"] .gpu-demo-toggle[aria-pressed="true"] { color: var(--text); }
+html[data-theme="light"] .gpu-meter { background: rgba(15, 18, 30, .08); }
+
+/* CTA band */
+html[data-theme="light"] .cta-band h2 { color: var(--text); }
+
+/* Phase track: hairlines drawn per cell so a part-filled last row doesn't show a grey block */
+.phase-track { gap: 0; background: var(--panel); }
+.phase-track li { box-shadow: inset -1px -1px 0 var(--line); }

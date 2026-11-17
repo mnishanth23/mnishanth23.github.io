@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Observability and capacity — Nishanth M</title>
+<meta name="description" content="How Nishanth M freed about 108 GB by cutting Prometheus retention from 1 year to 90 days, upgraded Elasticsearch and Kibana 7.11.2 to 7.17.28 (8.x is next), set up Uptime Kuma with Google Chat alerts, and built a public ELK log simulator.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Observability and capacity — Nishanth M">
+<meta property="og:description" content="How Nishanth M freed about 108 GB by cutting Prometheus retention from 1 year to 90 days, upgraded Elasticsearch and Kibana 7.11.2 to 7.17.28 (8.x is next), set up Uptime Kuma with Google Chat alerts, and built a public ELK log simulator.">
+<meta property="og:url" content="https://mnishanth23.github.io/projects/observability-capacity.html">
+<link rel="canonical" href="https://mnishanth23.github.io/projects/observability-capacity.html">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../blog/assets/style.css">
+<link rel="stylesheet" href="../blog/assets/site.css">
+<link rel="stylesheet" href="assets/projects.css">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../blog/index.html">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="../blog/index.html"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><span aria-current="page">Observability and capacity</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · HERO: category eyebrow, title (view transition), summary -->
+    <header class="proj-hero">
+      <p class="eyebrow">Observability · Work project</p>
+      <h1 style="view-transition-name: proj-title-observability-capacity">Observability and capacity</h1>
+      <p class="proj-summary">I administer the backend server behind our AI-SaaS product: Prometheus, MongoDB 4 and 8, MariaDB, Redis, PHP and cAdvisor, all in Docker. When it hit a disk-space crisis, the biggest consumer was a year of Prometheus metrics. Cutting retention to 90 days freed about 108 GB, taking the volume from 127 GB to 14 GB. I also upgraded the dev Elasticsearch and Kibana from 7.11.2 to 7.17.28, the required step before 8.x (that&rsquo;s next), set up Uptime Kuma with Google Chat alert templates for our microservices, and built a public ELK log simulator.</p>
+
+      <!-- Hero banner: SAME markup as the card media so it morphs (proj-<slug>) -->
+      <div class="card-media proj-banner" style="view-transition-name: proj-observability-capacity" aria-hidden="true">
+        <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <path class="g-line" opacity=".45" d="M20 104H220M20 104V14"/>
+        <path class="g-hot" stroke-dasharray="6 6" d="M20 34H220"/>
+        <polyline class="g-line" points="20,88 48,82 76,86 104,66 132,72 160,48 188,58 220,52"/>
+        <rect class="g-fill" x="155" y="43" width="10" height="10"/>
+      </svg>
+        <span class="badge badge--public">Work · public repo</span>
+        <span class="media-label">metrics://prometheus</span>
+      </div>
+
+      <!-- BLOCK 3 · META ROW: Role · Company · Period · Status -->
+      <dl class="meta-row">
+        <!-- REVIEW: role wording for this project -->
+        <div><dt>Role</dt><dd>Server administration &amp; monitoring</dd></div>
+        <div><dt>Company</dt><dd>SMI Tech Group · Madurai, Tamil Nadu</dd></div>
+        <!-- TODO: dates (retention fix, Elasticsearch upgrade, Uptime Kuma setup) -->
+        <div><dt>Period</dt><dd>Ongoing</dd></div>
+        <div><dt>Status</dt><dd><span class="status-chip public">Internal · <a href="https://github.com/mnishanth23/elk-log-simulator" rel="noopener">public repo ↗</a></span></dd></div>
+      </dl>
+    </header>
+
+    <!-- BLOCK 4 · TECH & TOOLS -->
+    <section class="detail-section tech-list" aria-labelledby="tech-h">
+      <h2 class="eyebrow" id="tech-h">Tech &amp; tools</h2>
+      <ul class="tags" role="list">
+        <li>Prometheus</li><li>cAdvisor</li><li>Docker</li><li>MongoDB 4 &amp; 8</li><li>MariaDB</li><li>Redis</li><li>PHP</li><li>Elasticsearch 7.17.28</li><li>Kibana</li><li>Uptime Kuma</li><li>Google Chat alerts</li><li>Fluent Bit</li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 5 · MEDIA: diagram figure.
+         Two inline SVGs: --wide (desktop) and --tall (phones, ≤680px).
+         To use a real screenshot / demo video instead, replace the two <svg>
+         elements with ONE of the commented tags below . -->
+    <section class="detail-section" aria-labelledby="media-h">
+      <h2 class="eyebrow" id="media-h">What I look after</h2>
+      <figure class="diagram">
+      <!-- REVIEW: cAdvisor → Prometheus is the only scrape path drawn; confirm whether Prometheus also scrapes database or app exporters -->
+        <div class="diagram-frame">
+  <svg class="diagram-svg diagram-svg--wide" viewBox="0 0 1120 436" role="img" aria-labelledby="dg-obw-t dg-obw-d">
+    <title id="dg-obw-t">AI-SaaS backend server, uptime monitoring and the dev Elasticsearch stack</title>
+    <desc id="dg-obw-d">Left: the AI-SaaS backend server runs MongoDB 4 and 8, MariaDB, Redis, PHP and cAdvisor in Docker. cAdvisor exposes per-container metrics that Prometheus collects; Prometheus retention was cut from 1 year to 90 days, taking its volume from 127 GB to 14 GB. Right, top: Uptime Kuma checks the microservices and sends alerts to Google Chat using alert templates. Right, bottom: the dev Elasticsearch and Kibana were upgraded from 7.11.2 to 7.17.28; the 8.x upgrade is next and not done yet.</desc>
+    <defs>
+      <marker id="ah-obw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-obw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="20" y="16" width="580" height="404"/>
+    <text class="d-tag" x="40" y="44">AI-SAAS BACKEND SERVER · DOCKER</text>
+    <g>
+      <rect class="d-box" x="40" y="66" width="170" height="76"/>
+      
+      <text class="d-label" x="54" y="110">MongoDB 4 · 8</text>
+      <text class="d-sub" x="54" y="129">container</text>
+    </g>
+    <g>
+      <rect class="d-box" x="225" y="66" width="170" height="76"/>
+      
+      <text class="d-label" x="239" y="110">MariaDB</text>
+      <text class="d-sub" x="239" y="129">container</text>
+    </g>
+    <g>
+      <rect class="d-box" x="410" y="66" width="170" height="76"/>
+      
+      <text class="d-label" x="424" y="110">Redis</text>
+      <text class="d-sub" x="424" y="129">container</text>
+    </g>
+    <g>
+      <rect class="d-box" x="40" y="162" width="262" height="76"/>
+      
+      <text class="d-label" x="54" y="206">PHP</text>
+      <text class="d-sub" x="54" y="225">application container</text>
+    </g>
+    <g>
+      <rect class="d-box" x="318" y="162" width="262" height="76"/>
+      
+      <text class="d-label" x="332" y="206">cAdvisor</text>
+      <text class="d-sub" x="332" y="225">per-container metrics</text>
+    </g>
+    <path class="d-arrow" d="M449 238V288" marker-end="url(#ah-obw)"/>
+    <path class="d-flow" d="M449 238V280"/>
+    <text class="d-sub" x="462" y="270">scrape</text>
+    <g>
+      <rect class="d-box d-box--accent" x="40" y="290" width="540" height="110"/>
+      <text class="d-tag" x="566" y="312" text-anchor="end">RETENTION 1Y → 90D</text>
+      <text class="d-label" x="54" y="368">Prometheus</text>
+      <text class="d-sub" x="54" y="387">TSDB volume 127 GB → 14 GB · ~108 GB freed</text>
+    </g>
+    <text class="d-tag" x="650" y="44">UPTIME</text>
+    <g>
+      <rect class="d-box" x="650" y="62" width="200" height="96"/>
+      
+      <text class="d-label" x="664" y="126">Uptime Kuma</text>
+      <text class="d-sub" x="664" y="145">microservice checks</text>
+    </g>
+    <path class="d-arrow" d="M850 110H898" marker-end="url(#ah-obw)"/>
+    <path class="d-flow" d="M850 110H890"/>
+    <g>
+      <rect class="d-box d-box--ok" x="900" y="62" width="200" height="96"/>
+      
+      <text class="d-label" x="914" y="126">Google Chat</text>
+      <text class="d-sub" x="914" y="145">alert templates</text>
+    </g>
+    <text class="d-tag" x="650" y="196">LOGS &amp; SEARCH · DEV</text>
+    <g>
+      <rect class="d-box" x="650" y="210" width="450" height="96"/>
+      <text class="d-tag" x="1086" y="232" text-anchor="end">DONE</text>
+      <text class="d-label" x="664" y="274">Elasticsearch + Kibana</text>
+      <text class="d-sub" x="664" y="293">upgraded 7.11.2 → 7.17.28</text>
+    </g>
+    <path class="d-dash" d="M875 306V338" marker-end="url(#ahr-obw)"/>
+    <g>
+      <rect class="d-box d-box--ghost" x="650" y="340" width="450" height="60"/>
+      <text class="d-tag" x="666" y="364">NEXT</text>
+      <text class="d-sub" x="666" y="386">8.x upgrade · planned, not done</text>
+    </g>
+  </svg>
+  <svg class="diagram-svg diagram-svg--tall" viewBox="0 0 360 852" role="img" aria-labelledby="dg-obt-t dg-obt-d">
+    <title id="dg-obt-t">AI-SaaS backend server, uptime monitoring and the dev Elasticsearch stack</title>
+    <desc id="dg-obt-d">Left: the AI-SaaS backend server runs MongoDB 4 and 8, MariaDB, Redis, PHP and cAdvisor in Docker. cAdvisor exposes per-container metrics that Prometheus collects; Prometheus retention was cut from 1 year to 90 days, taking its volume from 127 GB to 14 GB. Right, top: Uptime Kuma checks the microservices and sends alerts to Google Chat using alert templates. Right, bottom: the dev Elasticsearch and Kibana were upgraded from 7.11.2 to 7.17.28; the 8.x upgrade is next and not done yet.</desc>
+    <defs>
+      <marker id="ah-obt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-obt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="10" y="10" width="340" height="404"/>
+    <text class="d-tag" x="24" y="34">AI-SAAS BACKEND · DOCKER</text>
+    <g>
+      <rect class="d-box" x="24" y="50" width="150" height="60"/>
+      <text class="d-label" x="38" y="86" style="font-size:15px">MongoDB 4 · 8</text>
+    </g>
+    <g>
+      <rect class="d-box" x="186" y="50" width="150" height="60"/>
+      <text class="d-label" x="200" y="86" style="font-size:15px">MariaDB</text>
+    </g>
+    <g>
+      <rect class="d-box" x="24" y="120" width="150" height="60"/>
+      <text class="d-label" x="38" y="156" style="font-size:15px">Redis</text>
+    </g>
+    <g>
+      <rect class="d-box" x="186" y="120" width="150" height="60"/>
+      <text class="d-label" x="200" y="156" style="font-size:15px">PHP</text>
+    </g>
+    <g>
+      <rect class="d-box" x="24" y="196" width="312" height="70"/>
+      
+      <text class="d-label" x="38" y="234">cAdvisor</text>
+      <text class="d-sub" x="38" y="253">per-container metrics</text>
+    </g>
+    <path class="d-arrow" d="M180 266V300" marker-end="url(#ah-obt)"/>
+    <path class="d-flow" d="M180 266V292"/>
+    <g>
+      <rect class="d-box d-box--accent" x="24" y="302" width="312" height="96"/>
+      <text class="d-tag" x="322" y="324" text-anchor="end">1Y → 90D</text>
+      <text class="d-label" x="38" y="366">Prometheus</text>
+      <text class="d-sub" x="38" y="385">127 GB → 14 GB · ~108 GB freed</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="444" width="320" height="76"/>
+      <text class="d-tag" x="326" y="466" text-anchor="end">UPTIME</text>
+      <text class="d-label" x="34" y="488">Uptime Kuma</text>
+      <text class="d-sub" x="34" y="507">microservice checks</text>
+    </g>
+    <path class="d-arrow" d="M60 520V554" marker-end="url(#ah-obt)"/>
+    <path class="d-flow" d="M60 520V546"/>
+    <g>
+      <rect class="d-box d-box--ok" x="20" y="556" width="320" height="76"/>
+      
+      <text class="d-label" x="34" y="600">Google Chat</text>
+      <text class="d-sub" x="34" y="619">alert templates</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="664" width="320" height="80"/>
+      <text class="d-tag" x="326" y="686" text-anchor="end">DONE</text>
+      <text class="d-label" x="34" y="712">Elasticsearch + Kibana</text>
+      <text class="d-sub" x="34" y="731">7.11.2 → 7.17.28 (dev)</text>
+    </g>
+    <path class="d-dash" d="M60 744V776" marker-end="url(#ahr-obt)"/>
+    <rect class="d-box d-box--ghost" x="20" y="778" width="320" height="60"/>
+    <text class="d-tag" x="34" y="802">NEXT</text>
+    <text class="d-sub" x="34" y="824">8.x upgrade · planned, not done</text>
+  </svg>
+          <!-- <img src="../assets/screens/observability-capacity-01.webp" alt="Grafana or Prometheus view of the backend server disk usage before and after the retention change" width="1600" height="900" loading="lazy" decoding="async"> -->
+          <!-- <video src="../assets/screens/observability-capacity-demo.mp4" poster="../assets/screens/observability-capacity-poster.webp" controls muted playsinline preload="none" width="1600" height="900"></video> -->
+        </div>
+        <figcaption><strong>Diagram — illustrative architecture</strong><span>Services simplified; host names omitted</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- BLOCK 6 · THE PROBLEM -->
+    <section class="detail-section" aria-labelledby="problem-h">
+      <p class="eyebrow">01</p>
+      <div class="prose">
+        <h2 id="problem-h" style="margin-top:.4em">The problem</h2>
+        <p>Three separate jobs, one theme: keep the systems observable without the observability itself becoming the problem.</p>
+        <ul>
+          <li><strong>A disk-space crisis on the AI-SaaS backend server.</strong> The server runs everything in Docker on shared disk, and when space ran out the largest consumer turned out to be Prometheus, keeping a full year of metrics.</li>
+          <li><strong>An old dev Elasticsearch.</strong> Dev Elasticsearch and Kibana were on 7.11.2. You can&rsquo;t jump from there to 8.x; the supported path goes through the last 7.x release first.</li>
+          <li><strong>Microservices without uptime alerts in the team&rsquo;s chat.</strong> If a service went down, someone had to notice.</li>
+        </ul>
+        <!-- REVIEW: the "before" state of microservice monitoring is a general framing, not a confirmed specific -->
+      </div>
+    </section>
+
+    <!-- BLOCK 7 · WHAT I DID -->
+    <section class="detail-section" aria-labelledby="did-h">
+      <p class="eyebrow">02</p>
+      <div class="prose">
+        <h2 id="did-h" style="margin-top:.4em">What I did</h2>
+        <ol>
+          <li><strong>Cut Prometheus retention from 1 year to 90 days</strong>, which freed about 108 GB: the volume went from 127 GB to 14 GB.</li>
+          <li><strong>Upgraded dev Elasticsearch and Kibana from 7.11.2 to 7.17.28</strong>, the required step before 8.x. The 8.x upgrade is next.</li>
+          <li><strong>Set up Uptime Kuma for our microservices</strong>, with Google Chat alert templates.</li>
+          <li><strong>Built the ELK Log Simulator</strong>, a public repo that generates logs, parses them with Fluent Bit and ships them to Elasticsearch.</li>
+          <li><strong>Keep administering the backend server</strong>: Prometheus, MongoDB 4 and 8, MariaDB, Redis, PHP and cAdvisor in Docker.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- BLOCK 8 · HOW IT WORKS (technical depth; practice, not invented numbers) -->
+    <section class="detail-section" aria-labelledby="how-h">
+      <p class="eyebrow">03</p>
+      <div class="prose">
+        <h2 id="how-h" style="margin-top:.4em">How it works</h2>
+        <h3>Finding where the disk went</h3>
+        <p>On a host where everything runs in Docker, the usual suspects are images, logs and volumes. The quickest way in is to measure, not guess: check which filesystem is full, then which Docker volume is biggest. Here the answer was the Prometheus data volume.</p>
+        <!-- REVIEW: the exact commands/steps used to find it (df, du, docker system df) are a general approach -->
+
+        <h3>Retention is a single flag</h3>
+        <p>Prometheus keeps its time-series database on disk and deletes data older than its retention window. With a one-year window, every metric from every container was kept for a year. Ninety days still covers day-to-day troubleshooting and recent trends, and cutting the window let Prometheus drop the older blocks.</p>
+        <!-- REVIEW: why 90 days was judged enough (who uses these metrics, how far back) — stated here as a general rationale -->
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">docker-compose.yml — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: shows the flag that changed, not the full service</span>
+<span class="k">services</span>:
+  <span class="k">prometheus</span>:
+    <span class="k">image</span>: <span class="s">prom/prometheus:&lt;tag&gt;</span>
+    <span class="k">command</span>:
+      - <span class="s">--config.file=/etc/prometheus/prometheus.yml</span>
+<span class="c">-     - --storage.tsdb.retention.time=1y</span>
+      - <span class="s">--storage.tsdb.retention.time=90d</span>   <span class="c"># was 1y</span></code></pre>
+        </figure>
+        <!-- REVIEW: simplified example. Confirm how Prometheus is actually run on the server (compose command vs. docker run vs. other) and its exact flags -->
+
+        <aside class="callout">
+          <span class="callout-k">Trade-off</span>
+          <p>Shorter retention means you can&rsquo;t look back more than 90 days. That&rsquo;s a deliberate choice: if long-term trends are ever needed, the fix is to store them somewhere built for it, not to keep a year of raw samples on the application server&rsquo;s disk.</p>
+        </aside>
+
+        <h3>Elasticsearch: 7.11.2 → 7.17.28, then 8.x</h3>
+        <p>Elasticsearch only supports upgrading to 8.x from the last 7.x minor, so 7.17 is a required stop, not an optional one. It&rsquo;s also the version that shows what 8.x will break: Kibana&rsquo;s Upgrade Assistant lists deprecated settings and indices to fix first. Kibana moves with Elasticsearch, so both went to 7.17.28 together. I did it on dev; the 8.x upgrade is next.</p>
+        <!-- REVIEW: upgrade method (rolling vs. full restart, snapshot before) is not stated -->
+
+        <h3>Uptime Kuma with Google Chat alerts</h3>
+        <p>Uptime Kuma checks each microservice on a schedule and sends a notification when its status changes. Alerts go to Google Chat through a webhook, using templates so every alert reads the same way: which service, what changed, and when. A consistent alert is faster to act on than a raw payload.</p>
+        <!-- REVIEW: monitor types (HTTP/keyword/TCP) and the exact template fields -->
+
+        <h3>ELK Log Simulator (public)</h3>
+        <p>To practise log pipelines without touching real systems, I built a small simulator: it generates log lines, Fluent Bit parses them into structured fields, and they land in Elasticsearch, ready to explore in Kibana. The code is on <a href="https://github.com/mnishanth23/elk-log-simulator" rel="noopener">GitHub</a>.</p>
+      </div>
+    </section>
+
+    <!-- BLOCK 9 · RESULTS (only real, verified outcomes) -->
+    <section class="detail-section" aria-labelledby="results-h">
+      <p class="eyebrow">04</p>
+      <h2 class="h2" id="results-h" style="margin-bottom:24px">Results</h2>
+      <!-- Before/after bar (CSS in blog/assets/style.css section 19b). Widths are to scale: 14 / 127 ≈ 11%.
+           REVIEW: 127 GB − 14 GB = 113 GB, while the resume says "about 108 GB freed"; both figures are shown as given — confirm which is exact -->
+      <figure class="ba" aria-labelledby="ba-cap">
+        <div class="ba-row">
+          <span class="ba-k">Before · 1-year retention</span>
+          <span class="ba-track"><span class="ba-bar ba-bar--before" style="--w:100%"></span></span>
+          <span class="ba-v">127 GB</span>
+        </div>
+        <div class="ba-row">
+          <span class="ba-k">After · 90-day retention</span>
+          <span class="ba-track"><span class="ba-bar ba-bar--after" style="--w:11.02%"></span></span>
+          <span class="ba-v">14 GB</span>
+        </div>
+        <figcaption id="ba-cap"><span class="ba-big">~108 GB</span> freed on the Prometheus volume</figcaption>
+      </figure>
+      <ul class="results" role="list">
+        <li><span><strong>About 108 GB freed</strong>: the Prometheus volume went from 127 GB to 14 GB after cutting retention from 1 year to 90 days.</span></li>
+        <li><span><strong>Dev Elasticsearch and Kibana on 7.17.28</strong>, upgraded from 7.11.2. 8.x is next.</span></li>
+        <li><span><strong>Uptime Kuma monitoring for microservices</strong>, with Google Chat alert templates.</span></li>
+        <li><span><strong>A public ELK Log Simulator</strong> with Fluent Bit parsing and Elasticsearch.</span></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 10 · WHAT I'D DO NEXT -->
+    <section class="detail-section" aria-labelledby="next-h">
+      <p class="eyebrow">05</p>
+      <div class="prose">
+        <h2 id="next-h" style="margin-top:.4em">What I&rsquo;d do next</h2>
+        <ul>
+          <li><strong>Upgrade dev to Elasticsearch 8.x</strong>: clear the Upgrade Assistant&rsquo;s findings, take a snapshot, then upgrade Elasticsearch and Kibana together.</li>
+          <li>Alert on disk usage for the Prometheus volume itself, so storage is a warning on a dashboard, not a crisis.</li>
+          <li>If long-term trends become necessary, keep downsampled history in dedicated storage rather than raising raw retention again.</li>
+          <li>Publish a status page from Uptime Kuma so teams can check service health without asking.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 11 · LINKS -->
+    <section class="detail-section" aria-labelledby="links-h">
+      <h2 class="eyebrow" id="links-h">Links</h2>
+      <ul class="link-block" role="list">
+        <li><span class="k">Repository</span><a href="https://github.com/mnishanth23/elk-log-simulator" rel="noopener">ELK Log Simulator on GitHub ↗</a></li>
+        <li><span class="k">Write-up</span><a href="../blog/prometheus-retention-108gb.html">How Prometheus retention ate 108 GB, and the one-line fix</a></li>
+        <li><span class="k">Write-up</span><a href="../blog/elasticsearch-7-11-to-7-17-upgrade.html">Elasticsearch 7.11.2 → 7.17.28: the required stop before 8.x</a></li>
+        <li><span class="k">Related</span><a href="gpu-llm-ocr-serving.html">GPU LLM/OCR serving with vLLM on A100</a></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 12 · PREV / NEXT (order = homepage Projects section) -->
+    <nav class="pager" aria-label="More projects">
+      <a class="prev" href="messaging-data-stack.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Previous project</span><span class="t">Messaging and data stack in Docker Compose</span></a>
+      <a class="next" href="gpu-llm-ocr-serving.html"><span class="k">Next project <span class="arr" aria-hidden="true">→</span></span><span class="t">GPU LLM/OCR serving with vLLM on A100</span></a>
+    </nav>
+
+    <!-- BLOCK 13 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Want monitoring that doesn&rsquo;t eat the disk?</h2>
+        <p>I&rsquo;m happy to talk Prometheus, Elasticsearch upgrades and alerting that people actually read.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="../blog/index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="../blog/assets/main.js" defer></script>
+<script src="../blog/assets/site.js"></script>
+</body>
+</html>

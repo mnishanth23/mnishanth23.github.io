@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Messaging and data stack in Docker Compose — Nishanth M</title>
+<meta name="description" content="How Nishanth M containerised ActiveMQ Classic with versioned config, converted a Karaf setup script to Docker Compose, set up NiFi 2 and Superset on devlab, and troubleshot Camel routes that stopped while containers stayed healthy.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Messaging and data stack in Docker Compose — Nishanth M">
+<meta property="og:description" content="How Nishanth M containerised ActiveMQ Classic with versioned config, converted a Karaf setup script to Docker Compose, set up NiFi 2 and Superset on devlab, and troubleshot Camel routes that stopped while containers stayed healthy.">
+<meta property="og:url" content="https://mnishanth23.github.io/projects/messaging-data-stack.html">
+<link rel="canonical" href="https://mnishanth23.github.io/projects/messaging-data-stack.html">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../blog/assets/style.css">
+<link rel="stylesheet" href="../blog/assets/site.css">
+<link rel="stylesheet" href="assets/projects.css">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../blog/index.html">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="../blog/index.html"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><span aria-current="page">Messaging and data stack in Docker Compose</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · HERO: category eyebrow, title (view transition), summary -->
+    <header class="proj-hero">
+      <p class="eyebrow">Data &amp; messaging · Work project</p>
+      <h1 style="view-transition-name: proj-title-messaging-data-stack">Messaging and data stack in Docker Compose</h1>
+      <p class="proj-summary">I containerised our ActiveMQ Classic broker with its configuration embedded and versioned, converted the Apache Karaf setup script into Docker Compose, and set up Apache NiFi 2 and Apache Superset on devlab, wired to the existing broker and the Postgres data-engine database. Along the way I troubleshot a production Apache Karaf 4.4.7 deployment where Camel routes silently stopped while every container still reported healthy.</p>
+
+      <!-- Hero banner: SAME markup as the card media so it morphs (proj-<slug>) -->
+      <div class="card-media proj-banner" style="view-transition-name: proj-messaging-data-stack" aria-hidden="true">
+        <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <path class="g-line" d="M44 30h22l30 30M44 60h52M44 90h22l30-30M144 60h30l22-22M174 60l22 22"/>
+        <rect class="g-box" x="20" y="22" width="24" height="16"/><rect class="g-box" x="20" y="52" width="24" height="16"/><rect class="g-box" x="20" y="82" width="24" height="16"/>
+        <rect class="g-box" x="96" y="36" width="48" height="48"/>
+        <path class="g-hot" d="M108 48v24M120 48v24M132 48v24"/>
+        <rect class="g-box" x="196" y="30" width="24" height="16"/><rect class="g-box" x="196" y="74" width="24" height="16"/>
+      </svg>
+        <span class="badge badge--private">Work · private</span>
+        <span class="media-label">broker://activemq</span>
+      </div>
+
+      <!-- BLOCK 3 · META ROW: Role · Company · Period · Status -->
+      <dl class="meta-row">
+        <!-- REVIEW: role wording for this project -->
+        <div><dt>Role</dt><dd>Containerisation, setup &amp; troubleshooting</dd></div>
+        <div><dt>Company</dt><dd>SMI Tech Group · Madurai, Tamil Nadu</dd></div>
+        <!-- TODO: dates (when the containerisation, the devlab setup and the Karaf troubleshooting happened) -->
+        <div><dt>Period</dt><dd>Ongoing</dd></div>
+        <div><dt>Status</dt><dd><span class="status-chip">Internal — source not public</span></dd></div>
+      </dl>
+    </header>
+
+    <!-- BLOCK 4 · TECH & TOOLS -->
+    <section class="detail-section tech-list" aria-labelledby="tech-h">
+      <h2 class="eyebrow" id="tech-h">Tech &amp; tools</h2>
+      <ul class="tags" role="list">
+        <li>ActiveMQ Classic</li><li>Apache Karaf 4.4.7</li><li>Apache Camel</li><li>Apache NiFi 2</li><li>Apache Superset</li><li>PostgreSQL</li><li>Docker Compose</li><li>Docker</li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 5 · MEDIA: diagram figure.
+         Two inline SVGs: --wide (desktop) and --tall (phones, ≤680px).
+         To use a real screenshot / demo video instead, replace the two <svg>
+         elements with ONE of the commented tags below . -->
+    <section class="detail-section" aria-labelledby="media-h">
+      <h2 class="eyebrow" id="media-h">How the stack fits together</h2>
+      <figure class="diagram">
+      <!-- REVIEW: wiring is simplified. Confirm: (1) what the Camel routes consume/produce and whether they feed NiFi or Postgres, (2) whether Postgres runs inside this Compose stack or is the existing external data-engine DB, (3) the Karaf 4.4.7 production deployment is a separate environment from devlab -->
+        <div class="diagram-frame">
+  <svg class="diagram-svg diagram-svg--wide" viewBox="0 0 1120 440" role="img" aria-labelledby="dg-msw-t dg-msw-d">
+    <title id="dg-msw-t">Messaging and data stack in Docker Compose on devlab</title>
+    <desc id="dg-msw-d">Inside a Docker Compose stack on the devlab environment: producers publish to an ActiveMQ Classic broker whose configuration is embedded in the image and versioned. Apache Karaf runs Apache Camel routes that consume from the broker. Apache NiFi 2 is wired to the same broker and to the Postgres data-engine database, and Apache Superset reads from that database for dashboards. A note underneath: a healthy container is not a healthy route, so route-level health is checked separately.</desc>
+    <defs>
+      <marker id="ah-msw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-msw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="20" y="16" width="1080" height="334"/>
+    <text class="d-tag" x="40" y="44">DOCKER COMPOSE · DEVLAB</text>
+    <path class="d-arrow" d="M350 118H408" marker-end="url(#ah-msw)"/>
+    <path class="d-flow" d="M350 118H400"/>
+    <path class="d-arrow" d="M710 118H768" marker-end="url(#ah-msw)"/>
+    <path class="d-flow" d="M710 118H760"/>
+    <path class="d-arrow" d="M560 166V198H200V228" marker-end="url(#ah-msw)"/>
+    <path class="d-flow" d="M560 166V198H200V220"/>
+    <text class="d-sub" x="576" y="190">same broker</text>
+    <path class="d-arrow" d="M350 278H408" marker-end="url(#ah-msw)"/>
+    <path class="d-flow" d="M350 278H400"/>
+    <path class="d-arrow" d="M710 278H768" marker-end="url(#ah-msw)"/>
+    <path class="d-flow" d="M710 278H760"/>
+    <g>
+      <rect class="d-box" x="50" y="70" width="300" height="96"/>
+      <text class="d-num" x="64" y="92">01</text>
+      <text class="d-label" x="64" y="134">Producers</text>
+      <text class="d-sub" x="64" y="153">services publishing messages</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="410" y="70" width="300" height="96"/>
+      <text class="d-num" x="424" y="92">02</text><text class="d-tag" x="696" y="92" text-anchor="end">VERSIONED CONFIG</text>
+      <text class="d-label" x="424" y="134">ActiveMQ Classic</text>
+      <text class="d-sub" x="424" y="153">broker · config in the image</text>
+    </g>
+    <g>
+      <rect class="d-box" x="770" y="70" width="300" height="96"/>
+      <text class="d-num" x="784" y="92">03</text><text class="d-tag" x="1056" y="92" text-anchor="end">ROUTE HEALTH</text>
+      <text class="d-label" x="784" y="134">Karaf / Camel routes</text>
+      <text class="d-sub" x="784" y="153">integration routes</text>
+    </g>
+    <g>
+      <rect class="d-box" x="50" y="230" width="300" height="96"/>
+      <text class="d-num" x="64" y="252">04</text>
+      <text class="d-label" x="64" y="294">Apache NiFi 2</text>
+      <text class="d-sub" x="64" y="313">data flows</text>
+    </g>
+    <g>
+      <rect class="d-box" x="410" y="230" width="300" height="96"/>
+      <text class="d-num" x="424" y="252">05</text>
+      <text class="d-label" x="424" y="294">Postgres</text>
+      <text class="d-sub" x="424" y="313">data-engine database</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="770" y="230" width="300" height="96"/>
+      <text class="d-num" x="784" y="252">06</text>
+      <text class="d-label" x="784" y="294">Apache Superset</text>
+      <text class="d-sub" x="784" y="313">dashboards &amp; exploration</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ghost" x="20" y="370" width="1080" height="52"/>
+      <rect class="d-head--accent" x="40" y="392" width="8" height="8"/>
+      <text class="d-sub" x="60" y="401"><tspan class="d-tag">HEALTHY CONTAINER ≠ HEALTHY ROUTE</tspan>  →  check that each Camel route is running, not just that the container is up</text>
+    </g>
+    <path class="d-dash" d="M920 166V186H1080V370"/>
+  </svg>
+  <svg class="diagram-svg diagram-svg--tall" viewBox="0 0 360 826" role="img" aria-labelledby="dg-mst-t dg-mst-d">
+    <title id="dg-mst-t">Messaging and data stack in Docker Compose on devlab</title>
+    <desc id="dg-mst-d">Inside a Docker Compose stack on the devlab environment: producers publish to an ActiveMQ Classic broker whose configuration is embedded in the image and versioned. Apache Karaf runs Apache Camel routes that consume from the broker. Apache NiFi 2 is wired to the same broker and to the Postgres data-engine database, and Apache Superset reads from that database for dashboards. A note underneath: a healthy container is not a healthy route, so route-level health is checked separately.</desc>
+    <defs>
+      <marker id="ah-mst" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-mst" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="10" y="10" width="340" height="716"/>
+    <text class="d-tag" x="24" y="34">DOCKER COMPOSE · DEVLAB</text>
+    <path class="d-arrow" d="M64 130V164" marker-end="url(#ah-mst)"/>
+    <path class="d-flow" d="M64 130V156"/>
+    <path class="d-arrow" d="M64 246V280" marker-end="url(#ah-mst)"/>
+    <path class="d-flow" d="M64 246V272"/>
+    <path class="d-arrow" d="M314 206.0H334V438.0H316" marker-end="url(#ah-mst)"/>
+    <path class="d-arrow" d="M64 478V512" marker-end="url(#ah-mst)"/>
+    <path class="d-flow" d="M64 478V504"/>
+    <path class="d-arrow" d="M64 594V628" marker-end="url(#ah-mst)"/>
+    <path class="d-flow" d="M64 594V620"/>
+    <g>
+      <rect class="d-box" x="24" y="50" width="290" height="80"/>
+      <text class="d-num" x="38" y="72">01</text>
+      <text class="d-label" x="38" y="98">Producers</text>
+      <text class="d-sub" x="38" y="117">services publishing messages</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="24" y="166" width="290" height="80"/>
+      <text class="d-num" x="38" y="188">02</text><text class="d-tag" x="300" y="188" text-anchor="end">VERSIONED</text>
+      <text class="d-label" x="38" y="214">ActiveMQ Classic</text>
+      <text class="d-sub" x="38" y="233">broker · config in the image</text>
+    </g>
+    <g>
+      <rect class="d-box" x="24" y="282" width="290" height="80"/>
+      <text class="d-num" x="38" y="304">03</text><text class="d-tag" x="300" y="304" text-anchor="end">ROUTE HEALTH</text>
+      <text class="d-label" x="38" y="330">Karaf / Camel routes</text>
+      <text class="d-sub" x="38" y="349">integration routes</text>
+    </g>
+    <g>
+      <rect class="d-box" x="24" y="398" width="290" height="80"/>
+      <text class="d-num" x="38" y="420">04</text>
+      <text class="d-label" x="38" y="446">Apache NiFi 2</text>
+      <text class="d-sub" x="38" y="465">wired to the same broker</text>
+    </g>
+    <g>
+      <rect class="d-box" x="24" y="514" width="290" height="80"/>
+      <text class="d-num" x="38" y="536">05</text>
+      <text class="d-label" x="38" y="562">Postgres</text>
+      <text class="d-sub" x="38" y="581">data-engine database</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="24" y="630" width="290" height="80"/>
+      <text class="d-num" x="38" y="652">06</text>
+      <text class="d-label" x="38" y="678">Apache Superset</text>
+      <text class="d-sub" x="38" y="697">dashboards &amp; exploration</text>
+    </g>
+    <rect class="d-box d-box--ghost" x="10" y="746" width="340" height="64"/>
+    <text class="d-tag" x="24" y="770">HEALTHY CONTAINER ≠ HEALTHY ROUTE</text>
+    <text class="d-sub" x="24" y="792">check route status, not just the container</text>
+  </svg>
+          <!-- <img src="../assets/screens/messaging-data-stack-01.webp" alt="Docker Compose stack on devlab: ActiveMQ, Karaf, NiFi and Superset containers" width="1600" height="900" loading="lazy" decoding="async"> -->
+          <!-- <video src="../assets/screens/messaging-data-stack-demo.mp4" poster="../assets/screens/messaging-data-stack-poster.webp" controls muted playsinline preload="none" width="1600" height="900"></video> -->
+        </div>
+        <figcaption><strong>Diagram — illustrative architecture</strong><span>Services simplified; host names omitted</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- BLOCK 6 · THE PROBLEM -->
+    <section class="detail-section" aria-labelledby="problem-h">
+      <p class="eyebrow">01</p>
+      <div class="prose">
+        <h2 id="problem-h" style="margin-top:.4em">The problem</h2>
+        <p>Our messaging and integration layer had grown the usual way: a broker, a Karaf container running Camel routes, and a setup script that knew how to put it all together. That works until you need to rebuild it somewhere else, or work out what changed.</p>
+        <!-- REVIEW: the "before" state (config living on the host, script-driven setup) is described as a general motivation, not a confirmed specific -->
+        <ul>
+          <li>The <strong>broker&rsquo;s configuration</strong> needed to travel with the broker, with a history of changes.</li>
+          <li>The <strong>Karaf setup</strong> was a script you ran, rather than a stack you could declare and bring up.</li>
+          <li>The team needed <strong>NiFi 2 and Superset on devlab</strong>, connected to the data that already existed rather than a fresh, empty copy.</li>
+          <li>In production, <strong>Camel routes on Karaf 4.4.7 stopped silently</strong> while the containers still reported healthy, so nothing looked wrong from the outside.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 7 · WHAT I DID -->
+    <section class="detail-section" aria-labelledby="did-h">
+      <p class="eyebrow">02</p>
+      <div class="prose">
+        <h2 id="did-h" style="margin-top:.4em">What I did</h2>
+        <ol>
+          <li><strong>Containerised ActiveMQ Classic</strong> with its configuration embedded in the image and versioned, so a broker version and its config ship together.</li>
+          <li><strong>Converted the Karaf setup script to Docker Compose</strong>, turning a sequence of steps into a declared stack.</li>
+          <li><strong>Set up Apache NiFi 2 and Apache Superset on devlab</strong>, wired to the existing broker and the Postgres data-engine database.</li>
+          <li><strong>Troubleshot the production Apache Karaf 4.4.7 deployment</strong>, including the Camel routes that stopped while their containers stayed healthy.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- BLOCK 8 · HOW IT WORKS (technical depth; practice, not invented numbers) -->
+    <section class="detail-section" aria-labelledby="how-h">
+      <p class="eyebrow">03</p>
+      <div class="prose">
+        <h2 id="how-h" style="margin-top:.4em">How it works</h2>
+        <h3>Broker config that ships with the broker</h3>
+        <p>Instead of mounting configuration from wherever it happens to live on a host, the broker image is built with its configuration files inside it. The config sits in version control next to the Dockerfile, so every change has a commit, and the image tag tells you exactly which config a running broker has. Rolling back the config means running the previous image.</p>
+        <!-- REVIEW: exact mechanism (COPY into the image vs. a versioned config volume) and tagging scheme -->
+
+        <h3>From setup script to Compose</h3>
+        <p>A setup script describes <em>how</em> to build an environment; a Compose file describes <em>what</em> the environment is. Each step in the script becomes something declared: the image, the ports, the volumes, the environment variables, the start order and a health check. Bringing the stack up, or rebuilding it, becomes one command, and a diff of the file shows what changed.</p>
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">docker-compose.yml — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: illustrates the pattern, not the real stack</span>
+<span class="k">services</span>:
+  <span class="k">activemq</span>:
+    <span class="k">build</span>: <span class="s">./activemq</span>          <span class="c"># config copied into the image</span>
+    <span class="k">image</span>: <span class="s">registry/activemq:&lt;config-version&gt;</span>
+  <span class="k">karaf</span>:
+    <span class="k">build</span>: <span class="s">./karaf</span>             <span class="c"># replaces the old setup script</span>
+    <span class="k">depends_on</span>: [<span class="s">activemq</span>]
+  <span class="k">nifi</span>:
+    <span class="k">image</span>: <span class="s">apache/nifi:&lt;2.x tag&gt;</span>
+  <span class="k">superset</span>:
+    <span class="k">image</span>: <span class="s">apache/superset:&lt;tag&gt;</span></code></pre>
+        </figure>
+        <!-- REVIEW: service names, build contexts and tags are placeholders, not the real file -->
+
+        <h3>NiFi 2 and Superset on devlab</h3>
+        <p>NiFi and Superset are only useful with real data behind them, so on devlab they connect to what already exists: NiFi to the existing ActiveMQ broker and the Postgres data-engine database, and Superset to that same database for dashboards and exploration. Nothing is copied into a separate sandbox that would drift.</p>
+        <!-- REVIEW: connection details (NiFi JMS/DB connection setup, which Superset datasets) -->
+
+        <h3>The lesson: a healthy container is not a healthy route</h3>
+        <p>The production Karaf 4.4.7 issue is the part I think about most. Camel routes stopped processing, but the containers reported healthy, because a container health check usually asks a narrow question: is the process up, is the port open? Karaf can be perfectly alive while a route inside it is stopped or stuck, and from the outside everything looks green.</p>
+        <p>My approach is to check health at the level where the work happens:</p>
+        <ul>
+          <li><strong>Route status</strong>: ask Karaf/Camel whether each route is actually started, for example via the Karaf shell&rsquo;s Camel commands or Camel&rsquo;s own health checks, and treat &ldquo;not started&rdquo; as unhealthy.</li>
+          <li><strong>Broker signals</strong>: watch queue depth and consumer counts. A queue that keeps growing, or loses its consumer, is a stopped route seen from the other side.</li>
+          <li><strong>Flow, not just liveness</strong>: alert when messages stop moving, not only when a container exits.</li>
+        </ul>
+        <!-- REVIEW: this is the general approach; the actual root cause of the stopped routes and which checks were put in place are not stated here -->
+
+        <aside class="callout">
+          <span class="callout-k">Rule of thumb</span>
+          <p>If a health check would still pass with the service doing nothing useful, it&rsquo;s a liveness check. Keep it, but don&rsquo;t mistake it for health.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- BLOCK 9 · RESULTS (only real, verified outcomes) -->
+    <section class="detail-section" aria-labelledby="results-h">
+      <p class="eyebrow">04</p>
+      <h2 class="h2" id="results-h" style="margin-bottom:24px">Results</h2>
+      <ul class="results" role="list">
+        <li><span><strong>ActiveMQ Classic runs as a container</strong> with its configuration embedded and versioned.</span></li>
+        <li><span><strong>The Karaf setup is a Docker Compose stack</strong> instead of a setup script.</span></li>
+        <li><span><strong>NiFi 2 and Superset are running on devlab</strong>, wired to the existing broker and the Postgres data-engine database.</span></li>
+        <li><span><strong>Production Karaf 4.4.7 troubleshot</strong>, including Camel routes that stopped while containers reported healthy.</span></li>
+      </ul>
+      <!-- TODO: outcome of the Karaf troubleshooting (root cause / fix), if the owner wants it stated -->
+    </section>
+
+    <!-- BLOCK 10 · WHAT I'D DO NEXT -->
+    <section class="detail-section" aria-labelledby="next-h">
+      <p class="eyebrow">05</p>
+      <div class="prose">
+        <h2 id="next-h" style="margin-top:.4em">What I&rsquo;d do next</h2>
+        <ul>
+          <li>Make route status part of the container health check, so &ldquo;healthy&rdquo; means the routes are running.</li>
+          <li>Alert on queue depth and consumer count, alongside the uptime monitoring described in <a href="observability-capacity.html">Observability and capacity</a>.</li>
+          <li>Keep the Karaf and Camel configuration versioned the same way as the broker&rsquo;s.</li>
+          <li>Write a short runbook for &ldquo;container healthy, nothing moving&rdquo;, so the next person starts at the right layer.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 11 · LINKS -->
+    <section class="detail-section" aria-labelledby="links-h">
+      <h2 class="eyebrow" id="links-h">Links</h2>
+      <ul class="link-block" role="list">
+        <li><span class="k">Repository</span><span>Internal (not public)</span></li>
+        <li><span class="k">Related</span><a href="observability-capacity.html">Observability and capacity</a></li>
+        <li><span class="k">Related</span><a href="drone-pipeline-hardening.html">Drone CI pipeline hardening</a></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 12 · PREV / NEXT (order = homepage Projects section) -->
+    <nav class="pager" aria-label="More projects">
+      <a class="prev" href="drone-pipeline-hardening.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Previous project</span><span class="t">Drone CI pipeline hardening</span></a>
+      <a class="next" href="observability-capacity.html"><span class="k">Next project <span class="arr" aria-hidden="true">→</span></span><span class="t">Observability and capacity</span></a>
+    </nav>
+
+    <!-- BLOCK 13 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Messaging that looks healthy and is healthy.</h2>
+        <p>I&rsquo;m happy to talk brokers, integration routes and the monitoring that catches silent failures.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="../blog/index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="../blog/assets/main.js" defer></script>
+<script src="../blog/assets/site.js"></script>
+</body>
+</html>

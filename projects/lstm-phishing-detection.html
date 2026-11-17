@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LSTM-Based Phishing Detection for Big E-mail Data — Nishanth M</title>
+<meta name="description" content="An academic deep-learning project by Nishanth M: an LSTM network that classifies e-mails as phishing or legitimate, presented at an international conference.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="LSTM-Based Phishing Detection for Big E-mail Data — Nishanth M">
+<meta property="og:description" content="An academic deep-learning project by Nishanth M: an LSTM network that classifies e-mails as phishing or legitimate, presented at an international conference.">
+<meta property="og:url" content="https://mnishanth23.github.io/projects/lstm-phishing-detection.html">
+<link rel="canonical" href="https://mnishanth23.github.io/projects/lstm-phishing-detection.html">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../blog/assets/style.css">
+<link rel="stylesheet" href="../blog/assets/site.css">
+<link rel="stylesheet" href="assets/projects.css">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../blog/index.html">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="../blog/index.html"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+
+<!-- =====================================================================
+     ACADEMIC PROJECT DETAIL (lstm-phishing-detection)
+     Built from the projects/drone-pipeline-hardening.html template (shorter
+     academic variant: no Problem/Results blocks).
+     SOURCES: GitHub repo description + languages API (https://github.com/mnishanth23/LSTM-Based-Phishing-Detection-for-big-E-mail-Data); the repo has NO README (checked 2026-10-15),
+     so nothing is quoted from one. Card text / tags from the old site. Framework details (Flask, Keras Tokenizer,
+     MySQL) were read from the repo's main.py imports and file layout, and are marked REVIEW.
+     ===================================================================== -->
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><span aria-current="page">LSTM-Based Phishing Detection for Big E-mail Data</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · HERO: category eyebrow, title (view transition), summary -->
+    <header class="proj-hero">
+      <!-- REVIEW: conference name/year (ICRTSET 2K23) is from the old site -->
+      <p class="eyebrow">Machine learning · Academic project</p>
+      <h1 style="view-transition-name: proj-title-lstm-phishing-detection">LSTM-Based Phishing Detection for Big E-mail Data</h1>
+      <p class="proj-summary">An LSTM deep-learning model for large-scale spam and phishing detection, with a scalable preprocessing pipeline that turns raw e-mail text into sequences the network can read. The findings were presented at ICRTSET 2K23, an international conference.</p>
+
+      <!-- Hero banner: SAME markup as the card media so it morphs (proj-<slug>) -->
+      <div class="card-media proj-banner" style="view-transition-name: proj-lstm-phishing-detection" aria-hidden="true">
+        <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <rect class="g-box" x="40" y="32" width="112" height="70"/>
+        <path class="g-line" d="M40 32l56 40 56-40"/>
+        <path class="g-hot" d="M192 14v52a16 16 0 0 1-32 0v-8"/>
+        <path class="g-hot" d="M154 64l6-8 6 8"/>
+      </svg>
+        <span class="badge badge--academic">Academic</span>
+        <span class="media-label">model://lstm</span>
+      </div>
+
+      <!-- BLOCK 3 · META ROW -->
+      <dl class="meta-row">
+        <!-- REVIEW: education details (B.E. CSE, Loyola Institute of Technology and Science, Thovalai, 2019–2023) come from earlier material; the latest resume leaves education blank -->
+        <div><dt>Institution</dt><dd>Loyola Institute of Technology and Science, Thovalai</dd></div>
+        <div><dt>Context</dt><dd>B.E. Computer Science and Engineering</dd></div>
+        <!-- TODO: project year (degree ran 2019–2023; conference was 2K23) -->
+        <div><dt>Presented at</dt><dd>ICRTSET 2K23 <!-- REVIEW: conference name/year --></dd></div>
+        <div><dt>Status</dt><dd><span class="status-chip public"><a href="https://github.com/mnishanth23/LSTM-Based-Phishing-Detection-for-big-E-mail-Data" rel="noopener">Public repo</a></span></dd></div>
+      </dl>
+    </header>
+
+    <!-- BLOCK 4 · TECH & TOOLS -->
+    <section class="detail-section tech-list" aria-labelledby="tech-h">
+      <h2 class="eyebrow" id="tech-h">Tech &amp; tools</h2>
+      <!-- Tags: old site (Python, JavaScript, HTML/CSS, TensorFlow) + academic ML skills (Keras, Scikit-learn) + languages API (JavaScript, HTML, CSS, Python). Flask: REVIEW (from main.py imports) -->
+      <ul class="tags" role="list">
+        <li>Python</li><li>TensorFlow</li><li>Keras</li><li>Scikit-learn</li><li>Flask</li><li>JavaScript</li><li>HTML/CSS</li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 5 · MEDIA: diagram figure (wide = desktop, tall = phones ≤680px) -->
+    <section class="detail-section" aria-labelledby="media-h">
+      <h2 class="eyebrow" id="media-h">From e-mail to verdict</h2>
+      <figure class="diagram">
+        <div class="diagram-frame">
+  <svg class="diagram-svg diagram-svg--wide" viewBox="0 0 1120 450" role="img" aria-labelledby="dg-lstm-w-t dg-lstm-w-d">
+    <title id="dg-lstm-w-t">LSTM phishing detection: from raw e-mail to a verdict</title>
+    <desc id="dg-lstm-w-d">E-mail text is cleaned, tokenised and padded into fixed-length sequences. An embedding layer turns each token into a dense vector, an LSTM layer reads the sequence in order, and a classifier layer scores it, labelling the e-mail as phishing or legitimate. The model sits behind a small Flask web front end.</desc>
+    <defs>
+      <marker id="ah-lstm-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-lstm-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <path class="d-arrow" d="M346 88H394" marker-end="url(#ah-lstm-w)"/>
+    <path class="d-flow" d="M346 88H386"/>
+    <path class="d-arrow" d="M722 88H770" marker-end="url(#ah-lstm-w)"/>
+    <path class="d-flow" d="M722 88H762"/>
+    <path class="d-arrow" d="M935 136V186H183V248" marker-end="url(#ah-lstm-w)"/>
+    <path class="d-flow" d="M935 136V186H183V240"/>
+    <path class="d-arrow" d="M346 298H394" marker-end="url(#ah-lstm-w)"/>
+    <path class="d-flow" d="M346 298H386"/>
+    <path class="d-arrow" d="M722 298H770" marker-end="url(#ah-lstm-w)"/>
+    <path class="d-flow" d="M722 298H762"/>
+    <g>
+      <rect class="d-box" x="20" y="40" width="326" height="96"/>
+      <text class="d-num" x="34" y="62">01</text>
+      <text class="d-label" x="34" y="104">E-mail data</text>
+      <text class="d-sub" x="34" y="123">large e-mail corpus</text>
+    </g>
+    <g>
+      <rect class="d-box" x="396" y="40" width="326" height="96"/>
+      <text class="d-num" x="410" y="62">02</text>
+      <text class="d-label" x="410" y="104">Preprocess + tokenise</text>
+      <text class="d-sub" x="410" y="123">clean text → padded sequences</text>
+    </g>
+    <g>
+      <rect class="d-box" x="772" y="40" width="326" height="96"/>
+      <text class="d-num" x="786" y="62">03</text>
+      <text class="d-label" x="786" y="104">Embedding</text>
+      <text class="d-sub" x="786" y="123">tokens → dense vectors</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="250" width="326" height="96"/>
+      <text class="d-num" x="34" y="272">04</text><text class="d-tag" x="332" y="272" text-anchor="end">SEQUENCE MODEL</text>
+      <text class="d-label" x="34" y="314">LSTM</text>
+      <text class="d-sub" x="34" y="333">reads the message in order</text>
+    </g>
+    <g>
+      <rect class="d-box" x="396" y="250" width="326" height="96"/>
+      <text class="d-num" x="410" y="272">05</text>
+      <text class="d-label" x="410" y="314">Classifier</text>
+      <text class="d-sub" x="410" y="333">scores the sequence</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="772" y="250" width="326" height="96"/>
+      <text class="d-num" x="786" y="272">06</text>
+      <text class="d-label" x="786" y="314">Phishing / legitimate</text>
+      <text class="d-sub" x="786" y="333">verdict per e-mail</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ghost" x="20" y="374" width="1078" height="52"/>
+      <rect class="d-head--accent" x="40" y="396" width="8" height="8"/>
+      <text class="d-sub" x="60" y="405"><tspan class="d-tag">WEB FRONT END</tspan>  →  a Flask app wraps the model: sign-up / login, training data and a page to check e-mails</text>
+    </g>
+    <path class="d-dash" d="M935 346V374"/>
+  </svg>
+  <svg class="diagram-svg diagram-svg--tall" viewBox="0 0 360 780" role="img" aria-labelledby="dg-lstm-t-t dg-lstm-t-d">
+    <title id="dg-lstm-t-t">LSTM phishing detection: from raw e-mail to a verdict</title>
+    <desc id="dg-lstm-t-d">E-mail text is cleaned, tokenised and padded into fixed-length sequences. An embedding layer turns each token into a dense vector, an LSTM layer reads the sequence in order, and a classifier layer scores it, labelling the e-mail as phishing or legitimate. The model sits behind a small Flask web front end.</desc>
+    <defs>
+      <marker id="ah-lstm-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-lstm-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <path class="d-arrow" d="M60 90V124" marker-end="url(#ah-lstm-t)"/>
+    <path class="d-flow" d="M60 90V116"/>
+    <path class="d-arrow" d="M60 206V240" marker-end="url(#ah-lstm-t)"/>
+    <path class="d-flow" d="M60 206V232"/>
+    <path class="d-arrow" d="M60 322V356" marker-end="url(#ah-lstm-t)"/>
+    <path class="d-flow" d="M60 322V348"/>
+    <path class="d-arrow" d="M60 438V472" marker-end="url(#ah-lstm-t)"/>
+    <path class="d-flow" d="M60 438V464"/>
+    <path class="d-arrow" d="M60 554V588" marker-end="url(#ah-lstm-t)"/>
+    <path class="d-flow" d="M60 554V580"/>
+    <g>
+      <rect class="d-box" x="20" y="10" width="300" height="80"/>
+      <text class="d-num" x="34" y="32">01</text>
+      <text class="d-label" x="34" y="58">E-mail data</text>
+      <text class="d-sub" x="34" y="77">large e-mail corpus</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="126" width="300" height="80"/>
+      <text class="d-num" x="34" y="148">02</text>
+      <text class="d-label" x="34" y="174">Preprocess + tokenise</text>
+      <text class="d-sub" x="34" y="193">clean text → padded sequences</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="242" width="300" height="80"/>
+      <text class="d-num" x="34" y="264">03</text>
+      <text class="d-label" x="34" y="290">Embedding</text>
+      <text class="d-sub" x="34" y="309">tokens → dense vectors</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="358" width="300" height="80"/>
+      <text class="d-num" x="34" y="380">04</text><text class="d-tag" x="306" y="380" text-anchor="end">SEQUENCE MODEL</text>
+      <text class="d-label" x="34" y="406">LSTM</text>
+      <text class="d-sub" x="34" y="425">reads the message in order</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="474" width="300" height="80"/>
+      <text class="d-num" x="34" y="496">05</text>
+      <text class="d-label" x="34" y="522">Classifier</text>
+      <text class="d-sub" x="34" y="541">scores the sequence</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="20" y="590" width="300" height="80"/>
+      <text class="d-num" x="34" y="612">06</text>
+      <text class="d-label" x="34" y="638">Phishing / legitimate</text>
+      <text class="d-sub" x="34" y="657">verdict per e-mail</text>
+    </g>
+    <rect class="d-box d-box--ghost" x="20" y="700" width="300" height="64"/>
+    <text class="d-tag" x="34" y="724">WEB FRONT END</text>
+    <text class="d-sub" x="34" y="746">Flask · login · train · check e-mail</text>
+  </svg>
+        </div>
+        <figcaption><strong>Diagram — illustrative architecture</strong><span>Layer sizes and hyper-parameters omitted</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- BLOCK 6 · OVERVIEW -->
+    <section class="detail-section" aria-labelledby="overview-h">
+      <p class="eyebrow">01</p>
+      <div class="prose">
+        <h2 id="overview-h" style="margin-top:.4em">Overview</h2>
+        <p>Phishing e-mails are written to look ordinary, so a filter that only checks for known bad words or links misses a lot. This project builds a system that detects phishing e-mails using <strong>Long Short-Term Memory (LSTM) networks</strong>, a type of recurrent neural network (RNN) known for its effectiveness in sequential data analysis.</p>
+        <p>An e-mail is a sequence: the order of the words carries meaning. An LSTM reads the message token by token and keeps a memory of what came before, so it can pick up phrasing patterns rather than isolated keywords.</p>
+        <p>The aim was a model that works on <strong>big e-mail data</strong>, so the preprocessing had to scale with the corpus, not just with a sample. The findings were presented at <strong>ICRTSET 2K23</strong>, an international conference.</p>
+        <!-- REVIEW: conference name/year -->
+        <!-- TODO: dataset name/size, accuracy or other metrics — the repo has no README reporting results, so none are stated -->
+      </div>
+    </section>
+
+    <!-- BLOCK 7 · APPROACH -->
+    <section class="detail-section" aria-labelledby="approach-h">
+      <p class="eyebrow">02</p>
+      <div class="prose">
+        <h2 id="approach-h" style="margin-top:.4em">Approach</h2>
+        <ol>
+          <li><strong>Prepare the text.</strong> Raw e-mails are cleaned and normalised, then tokenised and padded into fixed-length sequences so every message has the same shape going into the network.</li>
+          <!-- REVIEW: Keras Tokenizer + pad_sequences, read from main.py imports -->
+          <li><strong>Embed.</strong> An embedding layer turns each token into a dense vector, so words used in similar ways end up close together.</li>
+          <li><strong>Read the sequence.</strong> The LSTM layer processes the vectors in order and carries context across the message.</li>
+          <li><strong>Classify.</strong> A final classifier layer scores the sequence and labels the e-mail <em>phishing</em> or <em>legitimate</em>.</li>
+          <li><strong>Wrap it in a web app.</strong> A small Flask front end lets a user sign up, log in, work with the training data and check messages through the browser.</li>
+          <!-- REVIEW: Flask front end and its pages (register/login, train_data, spam_detect) inferred from the repo's main.py and templates/ folder; MySQL (mysql.connector) also used for app data -->
+        </ol>
+        <!-- REVIEW: exact layer stack (embedding size, LSTM units, output activation) is not documented in a README; diagram shows the generic pipeline from the brief -->
+      </div>
+    </section>
+
+    <!-- BLOCK 8 · WHAT I LEARNED / WHAT I'D DO DIFFERENTLY TODAY (ideas, not claims) -->
+    <section class="detail-section" aria-labelledby="learned-h">
+      <p class="eyebrow">03</p>
+      <div class="prose">
+        <h2 id="learned-h" style="margin-top:.4em">What I learned, and what I&rsquo;d do differently today</h2>
+        <p>The main lesson: the model is the small part. Getting messy e-mail text into a consistent shape is what decides how far the model can scale.</p>
+        <p>Looking at it now as a DevOps engineer, this is what I&rsquo;d change to make it something you could run and hand over:</p>
+        <ul>
+          <li><strong>Containerise it.</strong> One image with pinned Python and library versions, so the environment that trained the model is the one that serves it.</li>
+          <li><strong>Serve it properly.</strong> Run the Flask app under a production WSGI server instead of the development server, with a <code>/health</code> endpoint a deploy can check.</li>
+          <li><strong>Version the model like an image.</strong> Store each trained model as a tagged artefact, so a bad model is rolled back by re-deploying the previous tag, the same way I roll back services at work.</li>
+          <li><strong>Put it through CI.</strong> Tests for the preprocessing step, an image scan before anything ships, and a build that fails loudly instead of a notebook that &ldquo;worked on my machine&rdquo;.</li>
+          <li><strong>Keep secrets out of the code.</strong> Database and mail credentials come from environment variables or a secret store, never from the repository.</li>
+          <li><strong>Watch it in production.</strong> Request latency, error rate and the share of e-mails flagged over time, so drift shows up on a dashboard before users notice.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 11 · LINKS -->
+    <section class="detail-section" aria-labelledby="links-h">
+      <h2 class="eyebrow" id="links-h">Links</h2>
+      <ul class="link-block" role="list">
+        <li><span class="k">Repository</span><a href="https://github.com/mnishanth23/LSTM-Based-Phishing-Detection-for-big-E-mail-Data" rel="noopener">LSTM-Based-Phishing-Detection-for-big-E-mail-Data on GitHub ↗</a></li>
+        <li><span class="k">Conference</span><span>ICRTSET 2K23 (international conference) <!-- REVIEW: conference name/year; TODO: paper/proceedings link if available --></span></li>
+        <li><span class="k">More</span><a href="../index.html#projects">All projects</a></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 12 · PREV / NEXT (order = homepage Projects section) -->
+    <nav class="pager" aria-label="More projects">
+      <a class="prev" href="gpu-llm-ocr-serving.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Previous project</span><span class="t">GPU LLM/OCR serving with vLLM on A100</span></a>
+      <span></span>
+    </nav>
+
+    <!-- BLOCK 13 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">From a working model to a service that stays up</h2>
+        <p>These days I build the pipelines and run the production side. Happy to talk CI/CD, containers and on-call.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="../blog/index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="../blog/assets/main.js" defer></script>
+<script src="../blog/assets/site.js"></script>
+</body>
+</html>

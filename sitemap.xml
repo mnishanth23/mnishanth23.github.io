@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://mnishanth23.github.io/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mnishanth23.github.io/blog/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mnishanth23.github.io/blog/elasticsearch-7-11-to-7-17-upgrade.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/blog/prometheus-retention-108gb.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/blog/jenkins-to-drone-migration.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/projects/blue-green-aks.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/projects/drone-pipeline-hardening.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/projects/messaging-data-stack.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/projects/observability-capacity.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/projects/gpu-llm-ocr-serving.html</loc><priority>0.7</priority></url>
+  <url><loc>https://mnishanth23.github.io/projects/lstm-phishing-detection.html</loc><priority>0.7</priority></url>
+</urlset>

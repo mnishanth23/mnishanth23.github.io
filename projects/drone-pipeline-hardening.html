@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Drone CI pipeline hardening — Nishanth M</title>
+<meta name="description" content="How Nishanth M migrated CI/CD from Jenkins to Drone CI and hardened the pipelines: Kaniko, Harbor, Trivy, SSH via a jump host, tag-based rollback and the review gaps closed.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Drone CI pipeline hardening — Nishanth M">
+<meta property="og:description" content="How Nishanth M migrated CI/CD from Jenkins to Drone CI and hardened the pipelines: Kaniko, Harbor, Trivy, SSH via a jump host, tag-based rollback and the review gaps closed.">
+<meta property="og:url" content="https://mnishanth23.github.io/projects/drone-pipeline-hardening.html">
+<link rel="canonical" href="https://mnishanth23.github.io/projects/drone-pipeline-hardening.html">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../blog/assets/style.css">
+<link rel="stylesheet" href="../blog/assets/site.css">
+<link rel="stylesheet" href="assets/projects.css">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../blog/index.html">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="../blog/index.html"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><span aria-current="page">Drone CI pipeline hardening</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · HERO: category eyebrow, title (view transition), summary -->
+    <header class="proj-hero">
+      <p class="eyebrow">CI/CD · Work project</p>
+      <h1 style="view-transition-name: proj-title-drone-pipeline-hardening">Drone CI pipeline hardening</h1>
+      <p class="proj-summary">I migrated our CI/CD from Jenkins to Drone CI and now maintain the Drone pipelines that build, scan and ship our services: images built with Kaniko, pushed to Harbor, scanned with Trivy, and deployed over SSH through a jump host with tag-based rollback. A review of the backend service pipelines then closed the gaps that let problems slip through. The result is consistently reliable, minimal-failure production deployments.</p>
+
+      <!-- Hero banner: SAME markup as the card media so it morphs (proj-<slug>) -->
+      <div class="card-media proj-banner" style="view-transition-name: proj-drone-pipeline-hardening" aria-hidden="true">
+        <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <path class="g-line" d="M52 60h24M108 60h20M168 60h20"/>
+        <path class="g-line" stroke-dasharray="4 5" d="M204 76v24H36V76"/>
+        <rect class="g-box" x="20" y="44" width="32" height="32"/>
+        <rect class="g-box" x="76" y="44" width="32" height="32"/>
+        <path class="g-hot" d="M148 40l20 20-20 20-20-20z"/>
+        <rect class="g-box" x="188" y="44" width="32" height="32"/>
+        <rect class="g-fill" x="198" y="54" width="12" height="12"/>
+      </svg>
+        <span class="badge badge--private">Work · private</span>
+        <span class="media-label">pipeline://drone</span>
+      </div>
+
+      <!-- BLOCK 3 · META ROW: Role · Company · Period · Status -->
+      <dl class="meta-row">
+        <!-- REVIEW: role wording for this project -->
+        <div><dt>Role</dt><dd>Migration, pipeline maintenance &amp; review</dd></div>
+        <div><dt>Company</dt><dd>SMI Tech Group · Madurai, Tamil Nadu</dd></div>
+        <!-- TODO: dates (when the migration and the review happened) -->
+        <div><dt>Period</dt><dd>Ongoing</dd></div>
+        <div><dt>Status</dt><dd><span class="status-chip">Internal — source not public</span></dd></div>
+      </dl>
+    </header>
+
+    <!-- BLOCK 4 · TECH & TOOLS -->
+    <section class="detail-section tech-list" aria-labelledby="tech-h">
+      <h2 class="eyebrow" id="tech-h">Tech &amp; tools</h2>
+      <ul class="tags" role="list">
+        <li>Drone CI</li><li>Jenkins (migrated from)</li><li>Kaniko</li><li>Harbor</li><li>Trivy</li><li>Docker</li><li>SSH · jump host</li><li>Git</li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 5 · MEDIA: diagram figure.
+         Two inline SVGs: --wide (desktop) and --tall (phones, ≤680px).
+         To use a real screenshot / demo video instead, replace the two <svg>
+         elements with ONE of the commented tags below . -->
+    <section class="detail-section" aria-labelledby="media-h">
+      <h2 class="eyebrow" id="media-h">How a release flows</h2>
+      <figure class="diagram">
+        <div class="diagram-frame">
+  <svg class="diagram-svg diagram-svg--wide" viewBox="0 0 1120 450" role="img" aria-labelledby="dg-w-t dg-w-d">
+    <title id="dg-w-t">Drone CI pipeline: build, scan, gate, deploy, verify</title>
+    <desc id="dg-w-d">A Git push triggers a Drone CI pipeline with a concurrency limit. Kaniko builds the container image, which is pushed to the Harbor registry with a release tag. Trivy scans the image and the scan blocks promotion to stage on findings. A manual approval gate sits before stage. Deployment runs over SSH through a jump host, followed by a post-deploy health check. Rollback re-deploys the previous image tag from Harbor. A failure at any step sends a notification to the team.</desc>
+    <defs>
+      <marker id="ah-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <path class="d-arrow" d="M252 88.0H300" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M252 88.0H292"/>
+    <path class="d-arrow" d="M534 88.0H582" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M534 88.0H574"/>
+    <path class="d-arrow" d="M816 88.0H864" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M816 88.0H856"/>
+    <path class="d-arrow" d="M252 298.0H300" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M252 298.0H292"/>
+    <path class="d-arrow" d="M534 298.0H582" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M534 298.0H574"/>
+    <path class="d-arrow" d="M816 298.0H864" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M816 298.0H856"/>
+    <path class="d-arrow" d="M916 136V186H80V248" marker-end="url(#ah-w)"/>
+    <path class="d-flow" d="M916 136V186H80V240"/>
+    <path class="d-dash" d="M1058 136V248" marker-end="url(#ahr-w)"/>
+    <text class="d-tag" x="1048" y="206" text-anchor="end">ROLLBACK</text>
+    <text class="d-sub" x="1048" y="223" text-anchor="end">re-deploy previous tag</text>
+    <g>
+      <rect class="d-box" x="20" y="40" width="232" height="96"/>
+      <text class="d-num" x="34" y="62">01</text>
+      <text class="d-label" x="34" y="104">Git push</text>
+      <text class="d-sub" x="34" y="123">commit / tag event</text>
+    </g>
+    <g>
+      <rect class="d-box" x="302" y="40" width="232" height="96"/>
+      <text class="d-num" x="316" y="62">02</text><text class="d-tag" x="520" y="62" text-anchor="end">CONCURRENCY LIMIT</text>
+      <text class="d-label" x="316" y="104">Drone CI</text>
+      <text class="d-sub" x="316" y="123">pipeline-as-code</text>
+    </g>
+    <g>
+      <rect class="d-box" x="584" y="40" width="232" height="96"/>
+      <text class="d-num" x="598" y="62">03</text>
+      <text class="d-label" x="598" y="104">Kaniko build</text>
+      <text class="d-sub" x="598" y="123">daemonless image build</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="866" y="40" width="232" height="96"/>
+      <text class="d-num" x="880" y="62">04</text><text class="d-tag" x="1084" y="62" text-anchor="end">TAGGED IMAGES</text>
+      <text class="d-label" x="880" y="104">Harbor</text>
+      <text class="d-sub" x="880" y="123">private registry</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="250" width="232" height="96"/>
+      <text class="d-num" x="34" y="272">05</text><text class="d-tag" x="238" y="272" text-anchor="end">BLOCKING FOR STAGE</text>
+      <text class="d-label" x="34" y="314">Trivy scan</text>
+      <text class="d-sub" x="34" y="333">image vulnerabilities</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="302" y="250" width="232" height="96"/>
+      <text class="d-num" x="316" y="272">06</text>
+      <text class="d-label" x="316" y="314">Manual gate</text>
+      <text class="d-sub" x="316" y="333">approval before stage</text>
+    </g>
+    <g>
+      <rect class="d-box" x="584" y="250" width="232" height="96"/>
+      <text class="d-num" x="598" y="272">07</text>
+      <text class="d-label" x="598" y="314">SSH via jump host</text>
+      <text class="d-sub" x="598" y="333">bastion → target host</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="866" y="250" width="232" height="96"/>
+      <text class="d-num" x="880" y="272">08</text>
+      <text class="d-label" x="880" y="314">Deploy + health check</text>
+      <text class="d-sub" x="880" y="333">post-deploy verification</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ghost" x="20" y="374" width="1078" height="52"/>
+      <rect class="d-head--accent" x="40" y="396" width="8" height="8"/>
+      <text class="d-sub" x="60" y="405"><tspan class="d-tag">ANY STEP FAILS</tspan>  →  pipeline stops, nothing is promoted, failure notification goes to the team</text>
+    </g>
+    <path class="d-dash" d="M60 346V374"/>
+    <path class="d-dash" d="M342 346V374"/>
+    <path class="d-dash" d="M624 346V374"/>
+    <path class="d-dash" d="M906 346V374"/>
+  </svg>
+  <svg class="diagram-svg diagram-svg--tall" viewBox="0 0 360 1010" role="img" aria-labelledby="dg-t-t dg-t-d">
+    <title id="dg-t-t">Drone CI pipeline: build, scan, gate, deploy, verify</title>
+    <desc id="dg-t-d">A Git push triggers a Drone CI pipeline with a concurrency limit. Kaniko builds the container image, which is pushed to the Harbor registry with a release tag. Trivy scans the image and the scan blocks promotion to stage on findings. A manual approval gate sits before stage. Deployment runs over SSH through a jump host, followed by a post-deploy health check. Rollback re-deploys the previous image tag from Harbor. A failure at any step sends a notification to the team.</desc>
+    <defs>
+      <marker id="ah-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <path class="d-arrow" d="M60 90V124" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 90V116"/>
+    <path class="d-arrow" d="M60 206V240" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 206V232"/>
+    <path class="d-arrow" d="M60 322V356" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 322V348"/>
+    <path class="d-arrow" d="M60 438V472" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 438V464"/>
+    <path class="d-arrow" d="M60 554V588" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 554V580"/>
+    <path class="d-arrow" d="M60 670V704" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 670V696"/>
+    <path class="d-arrow" d="M60 786V820" marker-end="url(#ah-t)"/>
+    <path class="d-flow" d="M60 786V812"/>
+    <path class="d-dash" d="M320 398.0H338V862.0H322" marker-end="url(#ahr-t)"/>
+    <text class="d-tag" x="352" y="630.0" text-anchor="middle" transform="rotate(-90 352 630.0)">ROLLBACK · PREVIOUS TAG</text>
+    <g>
+      <rect class="d-box" x="20" y="10" width="300" height="80"/>
+      <text class="d-num" x="34" y="32">01</text>
+      <text class="d-label" x="34" y="58">Git push</text>
+      <text class="d-sub" x="34" y="77">commit / tag event</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="126" width="300" height="80"/>
+      <text class="d-num" x="34" y="148">02</text><text class="d-tag" x="306" y="148" text-anchor="end">CONCURRENCY LIMIT</text>
+      <text class="d-label" x="34" y="174">Drone CI</text>
+      <text class="d-sub" x="34" y="193">pipeline-as-code</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="242" width="300" height="80"/>
+      <text class="d-num" x="34" y="264">03</text>
+      <text class="d-label" x="34" y="290">Kaniko build</text>
+      <text class="d-sub" x="34" y="309">daemonless image build</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="358" width="300" height="80"/>
+      <text class="d-num" x="34" y="380">04</text><text class="d-tag" x="306" y="380" text-anchor="end">TAGGED IMAGES</text>
+      <text class="d-label" x="34" y="406">Harbor</text>
+      <text class="d-sub" x="34" y="425">private registry</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="474" width="300" height="80"/>
+      <text class="d-num" x="34" y="496">05</text><text class="d-tag" x="306" y="496" text-anchor="end">BLOCKING FOR STAGE</text>
+      <text class="d-label" x="34" y="522">Trivy scan</text>
+      <text class="d-sub" x="34" y="541">image vulnerabilities</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="590" width="300" height="80"/>
+      <text class="d-num" x="34" y="612">06</text>
+      <text class="d-label" x="34" y="638">Manual gate</text>
+      <text class="d-sub" x="34" y="657">approval before stage</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="706" width="300" height="80"/>
+      <text class="d-num" x="34" y="728">07</text>
+      <text class="d-label" x="34" y="754">SSH via jump host</text>
+      <text class="d-sub" x="34" y="773">bastion → target host</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="20" y="822" width="300" height="80"/>
+      <text class="d-num" x="34" y="844">08</text>
+      <text class="d-label" x="34" y="870">Deploy + health check</text>
+      <text class="d-sub" x="34" y="889">post-deploy verification</text>
+    </g>
+    <rect class="d-box d-box--ghost" x="20" y="932" width="300" height="64"/>
+    <text class="d-tag" x="34" y="956">ANY STEP FAILS</text>
+    <text class="d-sub" x="34" y="978">stop · nothing promoted · notify team</text>
+  </svg>
+          <!-- <img src="../assets/screens/drone-pipeline-hardening-01.webp" alt="Drone CI build view showing the build, scan and deploy steps" width="1600" height="900" loading="lazy" decoding="async"> -->
+          <!-- <video src="../assets/screens/drone-pipeline-hardening-demo.mp4" poster="../assets/screens/drone-pipeline-hardening-poster.webp" controls muted playsinline preload="none" width="1600" height="900"></video> -->
+        </div>
+        <figcaption><strong>Diagram — illustrative architecture</strong><span>Stages simplified; host names omitted</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- BLOCK 6 · THE PROBLEM -->
+    <section class="detail-section" aria-labelledby="problem-h">
+      <p class="eyebrow">01</p>
+      <div class="prose">
+        <h2 id="problem-h" style="margin-top:.4em">The problem</h2>
+        <p>Our CI/CD ran on Jenkins. The aim of moving was simple: pipelines that are easier to maintain and releases that are more reliable.</p>
+        <!-- REVIEW: the specific Jenkins pain points (plugin upkeep, config in the UI) are described as general motivations, not confirmed specifics -->
+        <p>Migrating the tool only solved half of it. When I later reviewed the backend service pipelines (brain and portal-service among them), the same kinds of gaps kept showing up — the sort that let a bad release look fine until someone noticed:</p>
+        <ul>
+          <li>No <strong>post-deploy health check</strong>, so a deploy could &ldquo;succeed&rdquo; with the service down.</li>
+          <li>Image scans that <strong>didn&rsquo;t block</strong> promotion to stage.</li>
+          <li>No <strong>concurrency limits</strong>, so two runs could deploy over each other.</li>
+          <li>No <strong>manual gate</strong> before stage.</li>
+          <li>Failures that <strong>nobody was notified</strong> about.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 7 · WHAT I DID -->
+    <section class="detail-section" aria-labelledby="did-h">
+      <p class="eyebrow">02</p>
+      <div class="prose">
+        <h2 id="did-h" style="margin-top:.4em">What I did</h2>
+        <ol>
+          <li><strong>Migrated CI/CD from Jenkins to Drone CI</strong>, moving pipelines into YAML that lives next to the code.</li>
+          <li><strong>Standardised the build-and-ship path</strong>: Kaniko builds the image, Harbor stores it, Trivy scans it, and deploys go over SSH through a jump host.</li>
+          <li><strong>Made rollback a tag change</strong>: every release is an image tag in Harbor, so rolling back means re-deploying the previous tag instead of rebuilding.</li>
+          <li><strong>Reviewed the backend service pipelines</strong> and closed the gaps: post-deploy health checks, blocking scans for stage, concurrency limits, manual gates before stage and failure notifications.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- BLOCK 8 · HOW IT WORKS (technical depth; practice, not invented numbers) -->
+    <section class="detail-section" aria-labelledby="how-h">
+      <p class="eyebrow">03</p>
+      <div class="prose">
+        <h2 id="how-h" style="margin-top:.4em">How it works</h2>
+        <h3>Build: Kaniko, no Docker daemon</h3>
+        <p>Kaniko builds container images from a Dockerfile inside a container, without needing a privileged Docker daemon on the runner. The image is pushed to Harbor with a tag tied to the build, so any deployed version can be traced back to the commit that produced it.</p>
+        <!-- REVIEW: tag scheme (commit SHA / git tag / build number) — describe the real one if you want it stated -->
+
+        <h3>Scan: Trivy as a gate, not a report</h3>
+        <p>Trivy scans the pushed image. For stage, the scan is <em>blocking</em>: if it fails, the pipeline stops and nothing moves forward. A scan that only writes a report is easy to ignore; a scan that fails the build gets fixed.</p>
+        <!-- REVIEW: severity threshold used for the blocking scan (e.g. HIGH,CRITICAL) -->
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">.drone.yml — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: illustrates the pattern, not a production pipeline</span>
+<span class="k">concurrency</span>:
+  <span class="k">limit</span>: <span class="s">1</span>            <span class="c"># one run at a time per pipeline</span>
+
+<span class="k">steps</span>:
+  - <span class="k">name</span>: <span class="s">scan</span>
+    <span class="k">image</span>: <span class="s">aquasec/trivy</span>
+    <span class="k">commands</span>:
+      <span class="c"># non-zero exit on findings = the pipeline stops here</span>
+      - <span class="s">trivy image --exit-code 1 --severity HIGH,CRITICAL "$IMAGE"</span></code></pre>
+        </figure>
+
+        <h3>Gate: a person says &ldquo;yes&rdquo; before stage</h3>
+        <p>A manual approval sits before stage. It&rsquo;s a deliberate speed bump: the build, scan and checks are automated, but someone looks at what&rsquo;s about to change before it reaches a shared environment.</p>
+        <!-- REVIEW: how the manual gate is implemented (Drone promotion, approval step, etc.) -->
+
+        <h3>Deploy: SSH through a jump host</h3>
+        <p>Target hosts aren&rsquo;t reachable directly from CI. Deploy steps connect through a jump host (bastion) and pull the exact tagged image from Harbor, so what was scanned is what runs.</p>
+
+        <h3>Verify: health check after every deploy</h3>
+        <p>A deploy isn&rsquo;t done when the container starts; it&rsquo;s done when the service answers. The post-deploy health check makes the pipeline fail when the new version isn&rsquo;t healthy, which also triggers the failure notification.</p>
+
+        <aside class="callout">
+          <span class="callout-k">Rollback</span>
+          <p>Because every release is a tagged image in Harbor, rollback is just a deploy of the previous tag: no rebuild, no guessing which commit was live.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- BLOCK 9 · RESULTS (only real, verified outcomes) -->
+    <section class="detail-section" aria-labelledby="results-h">
+      <p class="eyebrow">04</p>
+      <h2 class="h2" id="results-h" style="margin-bottom:24px">Results</h2>
+      <ul class="results" role="list">
+        <li><span><strong>Consistently reliable, minimal-failure production deployments</strong> after closing the pipeline review gaps.</span></li>
+        <li><span><strong>Easier pipelines to maintain</strong>: pipeline-as-code in Drone instead of Jenkins jobs.</span></li>
+        <li><span><strong>Rollback without a rebuild</strong>: re-deploy the previous image tag from Harbor.</span></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 10 · WHAT I'D DO NEXT -->
+    <section class="detail-section" aria-labelledby="next-h">
+      <p class="eyebrow">05</p>
+      <div class="prose">
+        <h2 id="next-h" style="margin-top:.4em">What I&rsquo;d do next</h2>
+        <ul>
+          <li>Deploy by image <strong>digest</strong> as well as tag, so a re-pushed tag can never change what runs.</li>
+          <li>Sign images in CI and verify the signature before deploy.</li>
+          <li>Wire the post-deploy health check to an automatic rollback to the previous tag.</li>
+          <li>Track deployment frequency, change failure rate and time to restore, so &ldquo;minimal-failure&rdquo; is a number on a dashboard.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 11 · LINKS -->
+    <section class="detail-section" aria-labelledby="links-h">
+      <h2 class="eyebrow" id="links-h">Links</h2>
+      <ul class="link-block" role="list">
+        <li><span class="k">Repository</span><span>Internal (not public)</span></li>
+        <li><span class="k">Write-up</span><a href="../blog/jenkins-to-drone-migration.html">Moving from Jenkins to Drone CI: what changed, and what I&rsquo;d do again</a></li>
+        <li><span class="k">Related</span><a href="https://github.com/mnishanth23/elk-log-simulator" rel="noopener">ELK Log Simulator on GitHub ↗</a></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 12 · PREV / NEXT (order = homepage Projects section) -->
+    <nav class="pager" aria-label="More projects">
+      <a class="prev" href="blue-green-aks.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Previous project</span><span class="t">Blue-green deployments · personal project</span></a>
+      <a class="next" href="messaging-data-stack.html"><span class="k">Next project <span class="arr" aria-hidden="true">→</span></span><span class="t">Messaging and data stack in Docker Compose</span></a>
+    </nav>
+
+    <!-- BLOCK 13 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Want this kind of reliability on your team?</h2>
+        <p>I&rsquo;m happy to talk pipelines, on-call and production support.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="../blog/index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="../blog/assets/main.js" defer></script>
+<script src="../blog/assets/site.js"></script>
+</body>
+</html>

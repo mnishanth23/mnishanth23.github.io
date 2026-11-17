@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GPU LLM/OCR serving with vLLM on A100 — Nishanth M</title>
+<meta name="description" content="Three vLLM model-serving containers on a single NVIDIA A100 80GB for a document-processing (IDP) platform, serving LightOnOCR-2, Chandra OCR 2 and a quantised Llama 3.1 8B, with GPU monitoring via the DCGM exporter, cAdvisor, node-exporter, Prometheus and Grafana.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="GPU LLM/OCR serving with vLLM on A100 — Nishanth M">
+<meta property="og:description" content="Three vLLM model-serving containers on a single NVIDIA A100 80GB for a document-processing (IDP) platform, serving LightOnOCR-2, Chandra OCR 2 and a quantised Llama 3.1 8B, with GPU monitoring via the DCGM exporter, cAdvisor, node-exporter, Prometheus and Grafana.">
+<meta property="og:url" content="https://mnishanth23.github.io/projects/gpu-llm-ocr-serving.html">
+<link rel="canonical" href="https://mnishanth23.github.io/projects/gpu-llm-ocr-serving.html">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../blog/assets/style.css">
+<link rel="stylesheet" href="../blog/assets/site.css">
+<link rel="stylesheet" href="assets/projects.css">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../blog/index.html">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="../blog/index.html"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><span aria-current="page">GPU LLM/OCR serving with vLLM on A100</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · HERO: category eyebrow, title (view transition), summary -->
+    <header class="proj-hero">
+      <p class="eyebrow">AI infra · Work project</p>
+      <h1 style="view-transition-name: proj-title-gpu-llm-ocr-serving">GPU LLM/OCR serving with vLLM on A100</h1>
+      <p class="proj-summary">I deployed and operate three vLLM model-serving containers on a single NVIDIA A100 80GB GPU server that our document-processing (IDP) platform relies on. They serve LightOnOCR-2, Chandra OCR 2 and a quantised Llama 3.1 8B. I tuned the Docker-based inference containers to share the one GPU, and set up monitoring with the DCGM exporter, cAdvisor, node-exporter, Prometheus and Grafana.</p>
+
+      <!-- Hero banner: SAME markup as the card media so it morphs (proj-<slug>) -->
+      <div class="card-media proj-banner" style="view-transition-name: proj-gpu-llm-ocr-serving" aria-hidden="true">
+        <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <path class="g-line" d="M96 26V12M112 26V12M128 26V12M144 26V12M96 94v14M112 94v14M128 94v14M144 94v14M86 38H70M86 54H70M86 70H70M86 84H70M154 38h16M154 54h16M154 70h16M154 84h16"/>
+        <rect class="g-box" x="86" y="26" width="68" height="68"/>
+        <rect class="g-hot" x="102" y="42" width="36" height="36"/>
+        <rect class="g-fill" x="114" y="54" width="12" height="12"/>
+      </svg>
+        <span class="badge badge--private">Work · private</span>
+        <span class="media-label">gpu://a100-80gb</span>
+      </div>
+
+      <!-- BLOCK 3 · META ROW: Role · Company · Period · Status -->
+      <dl class="meta-row">
+        <!-- REVIEW: role wording for this project -->
+        <div><dt>Role</dt><dd>Deployment, tuning &amp; operations</dd></div>
+        <div><dt>Company</dt><dd>SMI Tech Group · Madurai, Tamil Nadu</dd></div>
+        <!-- TODO: dates (when the A100 serving stack was deployed) -->
+        <div><dt>Period</dt><dd>Ongoing</dd></div>
+        <div><dt>Status</dt><dd><span class="status-chip">Internal — source not public</span></dd></div>
+      </dl>
+    </header>
+
+    <!-- BLOCK 4 · TECH & TOOLS -->
+    <section class="detail-section tech-list" aria-labelledby="tech-h">
+      <h2 class="eyebrow" id="tech-h">Tech &amp; tools</h2>
+      <ul class="tags" role="list">
+        <li>vLLM</li><li>NVIDIA A100 80GB</li><li>Docker</li><li>LightOnOCR-2</li><li>Chandra OCR 2</li><li>Llama 3.1 8B (quantised)</li><li>DCGM exporter</li><li>cAdvisor</li><li>node-exporter</li><li>Prometheus</li><li>Grafana</li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 5 · MEDIA: diagram figure.
+         Two inline SVGs: --wide (desktop) and --tall (phones, ≤680px).
+         To use a real screenshot / demo video instead, replace the two <svg>
+         elements with ONE of the commented tags below . -->
+    <section class="detail-section" aria-labelledby="media-h">
+      <h2 class="eyebrow" id="media-h">How requests and metrics flow</h2>
+      <figure class="diagram">
+      <!-- REVIEW: confirm the call path (does the IDP platform call vLLM and the OCR containers directly?) and that Prometheus/Grafana run alongside or elsewhere -->
+        <div class="diagram-frame">
+  <svg class="diagram-svg diagram-svg--wide" viewBox="0 0 1120 436" role="img" aria-labelledby="dg-gpw-t dg-gpw-d">
+    <title id="dg-gpw-t">GPU serving for the IDP platform, with GPU monitoring</title>
+    <desc id="dg-gpw-d">A client sends documents to the API of the document-processing (IDP) platform. The platform calls three vLLM model-serving containers in Docker on a single NVIDIA A100 80GB GPU server: one serving a quantised Llama 3.1 8B, and two serving the OCR models LightOnOCR-2 and Chandra OCR 2. On the same server the DCGM exporter reads GPU telemetry, and cAdvisor and node-exporter report container and host metrics; Prometheus scrapes them and Grafana shows the dashboards.</desc>
+    <defs>
+      <marker id="ah-gpw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-gpw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="560" y="16" width="540" height="404"/>
+    <text class="d-tag" x="580" y="42">NVIDIA A100 80GB · 3 vLLM CONTAINERS · DOCKER</text>
+    <path class="d-arrow" d="M220 100H268" marker-end="url(#ah-gpw)"/>
+    <path class="d-flow" d="M220 100H260"/>
+    <path class="d-arrow" d="M500 100H578" marker-end="url(#ah-gpw)"/>
+    <path class="d-flow" d="M500 100H570"/>
+    <path class="d-arrow" d="M500 128H536V196H578" marker-end="url(#ah-gpw)"/>
+    <path class="d-flow" d="M500 128H536V196H570"/>
+    <path class="d-dash" d="M830 236V298" marker-end="url(#ahr-gpw)"/>
+    <text class="d-sub" x="844" y="272">GPU telemetry</text>
+    <path class="d-arrow" d="M580 348H512" marker-end="url(#ah-gpw)"/>
+    <path class="d-flow" d="M580 348H520"/>
+    <text class="d-sub" x="522" y="338" style="font-size:10.5px">scrape</text>
+    <path class="d-arrow" d="M290 348H242" marker-end="url(#ah-gpw)"/>
+    <path class="d-flow" d="M290 348H250"/>
+    <g>
+      <rect class="d-box" x="20" y="52" width="200" height="96"/>
+      <text class="d-num" x="34" y="74">01</text>
+      <text class="d-label" x="34" y="116">Client</text>
+      <text class="d-sub" x="34" y="135">documents in</text>
+    </g>
+    <g>
+      <rect class="d-box" x="270" y="52" width="230" height="96"/>
+      <text class="d-num" x="284" y="74">02</text>
+      <text class="d-label" x="284" y="116">API / IDP platform</text>
+      <text class="d-sub" x="284" y="135">document processing</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="580" y="60" width="500" height="80"/>
+      <text class="d-num" x="594" y="82">03</text><text class="d-tag" x="1066" y="82" text-anchor="end">LLM</text>
+      <text class="d-label" x="594" y="108">vLLM · LLM</text>
+      <text class="d-sub" x="594" y="127">quantised Llama 3.1 8B</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="580" y="156" width="500" height="80"/>
+      <text class="d-num" x="594" y="178">04</text><text class="d-tag" x="1066" y="178" text-anchor="end">OCR</text>
+      <text class="d-label" x="594" y="204">vLLM · OCR ×2</text>
+      <text class="d-sub" x="594" y="223">LightOnOCR-2 · Chandra OCR 2</text>
+    </g>
+    <g>
+      <rect class="d-box" x="580" y="300" width="500" height="96"/>
+      <text class="d-num" x="594" y="322">05</text><text class="d-tag" x="1066" y="322" text-anchor="end">METRICS</text>
+      <text class="d-label" x="594" y="364">DCGM exporter</text>
+      <text class="d-sub" x="594" y="383">+ cAdvisor · node-exporter</text>
+    </g>
+    <g>
+      <rect class="d-box" x="290" y="300" width="220" height="96"/>
+      <text class="d-num" x="304" y="322">06</text>
+      <text class="d-label" x="304" y="364">Prometheus</text>
+      <text class="d-sub" x="304" y="383">scrapes &amp; stores</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="20" y="300" width="220" height="96"/>
+      <text class="d-num" x="34" y="322">07</text>
+      <text class="d-label" x="34" y="364">Grafana</text>
+      <text class="d-sub" x="34" y="383">GPU dashboards</text>
+    </g>
+  </svg>
+  <svg class="diagram-svg diagram-svg--tall" viewBox="0 0 360 832" role="img" aria-labelledby="dg-gpt-t dg-gpt-d">
+    <title id="dg-gpt-t">GPU serving for the IDP platform, with GPU monitoring</title>
+    <desc id="dg-gpt-d">A client sends documents to the API of the document-processing (IDP) platform. The platform calls three vLLM model-serving containers in Docker on a single NVIDIA A100 80GB GPU server: one serving a quantised Llama 3.1 8B, and two serving the OCR models LightOnOCR-2 and Chandra OCR 2. On the same server the DCGM exporter reads GPU telemetry, and cAdvisor and node-exporter report container and host metrics; Prometheus scrapes them and Grafana shows the dashboards.</desc>
+    <defs>
+      <marker id="ah-gpt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-gpt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="10" y="228" width="340" height="364"/>
+    <text class="d-tag" x="336" y="250" text-anchor="end">A100 80GB · DOCKER</text>
+    <path class="d-arrow" d="M60 90V124" marker-end="url(#ah-gpt)"/>
+    <path class="d-flow" d="M60 90V116"/>
+    <path class="d-arrow" d="M60 206V260" marker-end="url(#ah-gpt)"/>
+    <path class="d-flow" d="M60 206V252"/>
+    <path class="d-arrow" d="M320 166.0H342V418.0H318" marker-end="url(#ah-gpt)"/>
+    <path class="d-dash" d="M60 458V492" marker-end="url(#ahr-gpt)"/>
+    <path class="d-arrow" d="M60 574V620" marker-end="url(#ah-gpt)"/>
+    <path class="d-flow" d="M60 574V612"/>
+    <path class="d-arrow" d="M60 702V736" marker-end="url(#ah-gpt)"/>
+    <path class="d-flow" d="M60 702V728"/>
+    <g>
+      <rect class="d-box" x="20" y="10" width="300" height="80"/>
+      <text class="d-num" x="34" y="32">01</text>
+      <text class="d-label" x="34" y="58">Client</text>
+      <text class="d-sub" x="34" y="77">documents in</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="126" width="300" height="80"/>
+      <text class="d-num" x="34" y="148">02</text>
+      <text class="d-label" x="34" y="174">API / IDP platform</text>
+      <text class="d-sub" x="34" y="193">document processing</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="24" y="262" width="292" height="80"/>
+      <text class="d-num" x="38" y="284">03</text><text class="d-tag" x="302" y="284" text-anchor="end">LLM</text>
+      <text class="d-label" x="38" y="310">vLLM · LLM</text>
+      <text class="d-sub" x="38" y="329">quantised Llama 3.1 8B</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="24" y="378" width="292" height="80"/>
+      <text class="d-num" x="38" y="400">04</text><text class="d-tag" x="302" y="400" text-anchor="end">OCR</text>
+      <text class="d-label" x="38" y="426">vLLM · OCR ×2</text>
+      <text class="d-sub" x="38" y="445">LightOnOCR-2 · Chandra OCR 2</text>
+    </g>
+    <g>
+      <rect class="d-box" x="24" y="494" width="292" height="80"/>
+      <text class="d-num" x="38" y="516">05</text><text class="d-tag" x="302" y="516" text-anchor="end">METRICS</text>
+      <text class="d-label" x="38" y="542">DCGM exporter</text>
+      <text class="d-sub" x="38" y="561">+ cAdvisor · node-exporter</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="622" width="300" height="80"/>
+      <text class="d-num" x="34" y="644">06</text>
+      <text class="d-label" x="34" y="670">Prometheus</text>
+      <text class="d-sub" x="34" y="689">scrapes &amp; stores</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="20" y="738" width="300" height="80"/>
+      <text class="d-num" x="34" y="760">07</text>
+      <text class="d-label" x="34" y="786">Grafana</text>
+      <text class="d-sub" x="34" y="805">GPU dashboards</text>
+    </g>
+  </svg>
+          <!-- <img src="../assets/screens/gpu-llm-ocr-serving-01.webp" alt="Grafana dashboard showing A100 GPU utilisation and memory from the DCGM exporter" width="1600" height="900" loading="lazy" decoding="async"> -->
+          <!-- <video src="../assets/screens/gpu-llm-ocr-serving-demo.mp4" poster="../assets/screens/gpu-llm-ocr-serving-poster.webp" controls muted playsinline preload="none" width="1600" height="900"></video> -->
+        </div>
+        <figcaption><strong>Diagram — illustrative architecture</strong><span>Services simplified; host names omitted</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- BLOCK 5b · DEMO PANEL: SIMULATED data only (random walk in the browser).
+         Styles: blog/assets/style.css section 19c + projects/assets/projects.css · Script: inline at the bottom of this page. -->
+    <section class="detail-section" aria-labelledby="demo-h">
+      <h2 class="eyebrow" id="demo-h">Demo panel · simulated</h2>
+      <div class="gpu-demo">
+        <div class="gpu-demo-flag" role="note">
+          <strong>Simulated demo data, not production metrics</strong>
+          <span>Numbers are generated in your browser by a random walk. The panel shows the kind of GPU view I build, not real figures from any server.</span>
+        </div>
+        <div class="gpu-demo-head">
+          <p class="gpu-demo-title">GPU dashboard <small>demo · 1 point per second</small></p>
+          <div class="gpu-demo-ctl">
+            <span class="gpu-demo-state" data-gpu-state>Idle</span>
+            <button class="gpu-demo-toggle" type="button" aria-pressed="false">Pause</button>
+          </div>
+        </div>
+        <div class="gpu-demo-grid">
+          <div class="gpu-demo-readouts">
+            <div class="gpu-stat gpu-stat--meter">
+              <span class="k">GPU utilisation <em>(simulated)</em></span>
+              <span class="v"><b data-gpu-util>0</b><i>%</i></span>
+              <div class="gpu-meter" role="meter" aria-label="Simulated GPU utilisation" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="gpu-meter-fill"></span></div>
+              <div class="gpu-meter-scale" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
+            </div>
+            <div class="gpu-stat">
+              <span class="k">Request throughput <em>(simulated)</em></span>
+              <span class="v"><b data-gpu-rps>0</b><i>req/s</i></span>
+            </div>
+          </div>
+          <div class="gpu-demo-charts">
+            <figure class="gpu-chart">
+              <figcaption>GPU utilisation <span>% · last 60 s</span></figcaption>
+              <canvas data-series="util" role="img" aria-label="Line chart of simulated GPU utilisation over the last 60 seconds. Demo data, not production metrics."></canvas>
+            </figure>
+            <figure class="gpu-chart">
+              <figcaption>Request throughput <span>req/s · last 60 s</span></figcaption>
+              <canvas data-series="rps" role="img" aria-label="Line chart of simulated request throughput over the last 60 seconds. Demo data, not production metrics."></canvas>
+            </figure>
+          </div>
+        </div>
+        <p class="gpu-demo-foot">SIMULATED · values are generated, not read from any server · hover a chart to inspect a point</p>
+      </div>
+    </section>
+
+    <!-- BLOCK 6 · THE PROBLEM -->
+    <section class="detail-section" aria-labelledby="problem-h">
+      <p class="eyebrow">01</p>
+      <div class="prose">
+        <h2 id="problem-h" style="margin-top:.4em">The problem</h2>
+        <p>The document-processing platform needs two kinds of model at once: OCR models that turn page images into text, and an LLM that works with that text. All three models run on one NVIDIA A100 80GB, and they all want the same thing: GPU memory.</p>
+        <ul>
+          <li>Models have to be <strong>served reliably</strong>, as long-running containers the platform can call, not as scripts someone starts by hand.</li>
+          <li>Several models <strong>share one GPU</strong>, so each one&rsquo;s memory footprint and settings affect the others.</li>
+          <li>Without GPU metrics, a slow pipeline is <strong>guesswork</strong>: is the GPU saturated, is memory full, or is the bottleneck somewhere else?</li>
+        </ul>
+        <!-- REVIEW: the problem framing (shared-GPU pressure, no prior GPU metrics) is a general description, not confirmed specifics -->
+      </div>
+    </section>
+
+    <!-- BLOCK 7 · WHAT I DID -->
+    <section class="detail-section" aria-labelledby="did-h">
+      <p class="eyebrow">02</p>
+      <div class="prose">
+        <h2 id="did-h" style="margin-top:.4em">What I did</h2>
+        <ol>
+          <li><strong>Deployed three vLLM model-serving containers</strong> on a single NVIDIA A100 80GB GPU server for the IDP platform, and I operate them.</li>
+          <li><strong>Deployed and tuned the Docker-based LLM/OCR inference containers</strong>: LightOnOCR-2, Chandra OCR 2 and a quantised Llama 3.1 8B, sharing the one GPU.</li>
+          <li><strong>Set up monitoring</strong> with the DCGM exporter (GPU), cAdvisor (containers) and node-exporter (host), scraped by Prometheus and shown in Grafana.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- BLOCK 8 · HOW IT WORKS (technical depth; practice, not invented numbers) -->
+    <section class="detail-section" aria-labelledby="how-h">
+      <p class="eyebrow">03</p>
+      <div class="prose">
+        <h2 id="how-h" style="margin-top:.4em">How it works</h2>
+        <h3>vLLM as the serving layer</h3>
+        <p>vLLM serves a model behind an HTTP API, so the platform calls it like any other service. It&rsquo;s built for throughput on GPUs: it batches incoming requests continuously and manages the attention cache in pages, so memory isn&rsquo;t wasted on padding. Each of the three models runs as its own vLLM container with a pinned image and explicit settings, which makes a deploy repeatable and a rollback a matter of running the previous container.</p>
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">docker-compose.yml — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: the shape of a vLLM service, not the real config</span>
+<span class="k">services</span>:
+  <span class="k">llm</span>:
+    <span class="k">image</span>: <span class="s">vllm/vllm-openai:&lt;pinned-tag&gt;</span>
+    <span class="k">command</span>:
+      - <span class="s">--model=&lt;quantised Llama 3.1 8B checkpoint&gt;</span>
+      - <span class="s">--gpu-memory-utilization=&lt;fraction&gt;</span>  <span class="c"># leave room for OCR</span>
+      - <span class="s">--max-model-len=&lt;tokens&gt;</span>
+    <span class="k">deploy</span>:
+      <span class="k">resources</span>:
+        <span class="k">reservations</span>:
+          <span class="k">devices</span>: [{ <span class="k">driver</span>: <span class="s">nvidia</span>, <span class="k">count</span>: <span class="s">all</span>, <span class="k">capabilities</span>: [<span class="s">gpu</span>] }]</code></pre>
+        </figure>
+        <!-- REVIEW: snippet is illustrative. Confirm how the containers are actually run (compose vs. docker run), which vLLM flags were tuned, and which values -->
+
+        <h3>Sharing one A100 80GB</h3>
+        <p>vLLM reserves a set fraction of GPU memory up front for weights and its cache. With three vLLM containers on one GPU, that fraction is the main tuning lever: too high and the other containers can&rsquo;t load, too low and the LLM handles fewer requests at once. The same thinking applies to context length: a longer maximum means a bigger cache per request.</p>
+        <!-- REVIEW: general practice; the actual memory split between the LLM and OCR containers is not stated -->
+
+        <h3>Why a quantised Llama 3.1 8B</h3>
+        <p>Quantization stores model weights at lower precision. The model takes less GPU memory, which leaves more room for the cache and for the OCR models next to it. The trade-off is some accuracy, so the choice is checked against the platform&rsquo;s real documents rather than assumed.</p>
+        <!-- REVIEW: quantization method/bit-width and how output quality was checked are not stated -->
+
+        <h3>Monitoring: DCGM exporter, cAdvisor and node-exporter → Prometheus → Grafana</h3>
+        <p>NVIDIA&rsquo;s DCGM exporter reads the GPU&rsquo;s own counters (utilisation, memory in use, temperature, power) and exposes them as Prometheus metrics. cAdvisor adds per-container CPU and memory, and node-exporter covers the host itself. Prometheus scrapes and stores all three, and Grafana turns them into dashboards. Looking at GPU utilisation next to memory in use answers the first question in any slowdown: is the GPU the bottleneck or not?</p>
+        <!-- REVIEW: which DCGM metrics and dashboards are used in practice -->
+
+        <aside class="callout">
+          <span class="callout-k">About the demo above</span>
+          <p>The panel shows the kind of view this monitoring gives you, GPU utilisation alongside request throughput, using simulated numbers. Real dashboards and figures stay internal.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- BLOCK 9 · RESULTS (only real, verified outcomes) -->
+    <section class="detail-section" aria-labelledby="results-h">
+      <p class="eyebrow">04</p>
+      <h2 class="h2" id="results-h" style="margin-bottom:24px">Results</h2>
+      <ul class="results" role="list">
+        <li><span><strong>Three vLLM model-serving containers on one NVIDIA A100 80GB</strong>, deployed and operated for the document-processing (IDP) platform.</span></li>
+        <li><span><strong>LLM and OCR inference in Docker</strong>: LightOnOCR-2, Chandra OCR 2 and a quantised Llama 3.1 8B, deployed and tuned to share the GPU.</span></li>
+        <li><span><strong>GPU, container and host visibility</strong> through the DCGM exporter, cAdvisor, node-exporter, Prometheus and Grafana.</span></li>
+      </ul>
+      <!-- TODO: any measured outcome (throughput, latency, GPU memory headroom) the owner can share -->
+    </section>
+
+    <!-- BLOCK 10 · WHAT I'D DO NEXT -->
+    <section class="detail-section" aria-labelledby="next-h">
+      <p class="eyebrow">05</p>
+      <div class="prose">
+        <h2 id="next-h" style="margin-top:.4em">What I&rsquo;d do next</h2>
+        <ul>
+          <li>Alert on GPU memory and sustained utilisation, so saturation is caught before users notice slow documents.</li>
+          <li>Scrape vLLM&rsquo;s own metrics as well, so request latency and queueing sit next to the GPU view.</li>
+          <li>Load-test each model on its own to find how much traffic it can take before latency climbs.</li>
+          <li>Add health checks that send a real test request, not just check that the container is running.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 11 · LINKS -->
+    <section class="detail-section" aria-labelledby="links-h">
+      <h2 class="eyebrow" id="links-h">Links</h2>
+      <ul class="link-block" role="list">
+        <li><span class="k">Repository</span><span>Internal (not public)</span></li>
+        <li><span class="k">Related</span><a href="observability-capacity.html">Observability and capacity</a></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 12 · PREV / NEXT (order = homepage Projects section) -->
+    <nav class="pager" aria-label="More projects">
+      <a class="prev" href="observability-capacity.html"><span class="k"><span class="arr" aria-hidden="true">←</span> Previous project</span><span class="t">Observability and capacity</span></a>
+      <a class="next" href="lstm-phishing-detection.html"><span class="k">Next project <span class="arr" aria-hidden="true">→</span></span><span class="t">LSTM-Based Phishing Detection for Big E-mail Data</span></a>
+    </nav>
+
+    <!-- BLOCK 13 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Running models on GPUs you can see into.</h2>
+        <p>I&rsquo;m happy to talk model serving, GPU monitoring and keeping inference boring in production.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="../blog/index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="../blog/assets/main.js" defer></script>
+<script src="../blog/assets/site.js"></script>
+<!-- GPU DEMO PANEL SCRIPT
+     Inline on purpose (only this page uses it), so js/main.js stays untouched.
+     Draws SIMULATED data only: a seeded random walk generated in the browser.
+     Nothing here reads from any server. Runs only while the panel is on screen
+     and the tab is visible; draws one static frame under prefers-reduced-motion.
+     Styles: blog/assets/style.css section 19c + projects/assets/projects.css. -->
+<script>
+(() => {
+  'use strict';
+  const root = document.querySelector('.gpu-demo');
+  if (!root) return;
+
+  const N = 61;          // points in the window (60 s at 1 point / s)
+  const TICK = 1000;     // ms per new point
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const $ = (s) => root.querySelector(s);
+  const ui = {
+    util: $('[data-gpu-util]'), rps: $('[data-gpu-rps]'),
+    meter: $('.gpu-meter'), fill: $('.gpu-meter-fill'),
+    btn: $('.gpu-demo-toggle'), state: $('[data-gpu-state]'),
+  };
+
+  /* Seeded PRNG: the static (reduced-motion) frame is the same every time */
+  let seed = 20260915;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  /* Random walk: throughput wanders with mean reversion and the odd burst;
+     utilisation follows throughput with lag and noise. Units are illustrative. */
+  let rps = 14, util = 52;
+  const step = () => {
+    rps += (rnd() - 0.5) * 4 + (15 - rps) * 0.08 + (rnd() < 0.05 ? 7 : 0);
+    rps = Math.max(1, Math.min(38, rps));
+    util += (18 + rps * 2.1 - util) * 0.35 + (rnd() - 0.5) * 7;
+    util = Math.max(3, Math.min(99, util));
+    return { util, rps };
+  };
+  const data = Array.from({ length: N }, step);
+
+  const SERIES = {
+    util: { max: 100, ticks: [0, 50, 100], unit: '%', dec: 0, line: ['#FF3B3C', '#D3201F'], area: ['rgba(255,59,60,.16)', 'rgba(211,32,31,.12)'] },
+    rps:  { max: 40,  ticks: [0, 20, 40],  unit: 'req/s', dec: 1, line: ['#E6E6E6', '#2A2E3A'], area: ['rgba(255,255,255,.07)', 'rgba(15,18,30,.07)'] },
+  };
+  /* Theme palette: index 0 = dark, 1 = light (site theme toggle sets html[data-theme]) */
+  const light = () => document.documentElement.getAttribute('data-theme') === 'light';
+  const P = () => light()
+    ? { grid: 'rgba(15,18,30,.10)', label: '#6A6F7C', ring: '#FFFFFF', cross: 'rgba(15,18,30,.35)', tipBg: 'rgba(255,255,255,.96)', tipLine: 'rgba(15,18,30,.2)', tipText: '#0C0E14', i: 1 }
+    : { grid: 'rgba(255,255,255,.08)', label: '#8E8E94', ring: '#0B0B0C', cross: 'rgba(255,255,255,.35)', tipBg: 'rgba(0,0,0,.88)', tipLine: 'rgba(255,255,255,.25)', tipText: '#FFFFFF', i: 0 };
+  const charts = Array.from(root.querySelectorAll('canvas[data-series]')).map((c) => ({
+    c, ctx: c.getContext('2d'), key: c.dataset.series, cfg: SERIES[c.dataset.series], hover: -1, w: 0, h: 0,
+  }));
+
+  const PAD = { l: 38, r: 10, t: 10, b: 20 };
+  let phase = 0;          // 0 → 1 between ticks: the window slides one step left
+
+  const geom = (ch) => {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = ch.c.clientWidth, h = ch.c.clientHeight;
+    if (w !== ch.w || h !== ch.h) {
+      ch.w = w; ch.h = h;
+      ch.c.width = Math.round(w * dpr); ch.c.height = Math.round(h * dpr);
+      ch.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    const pw = w - PAD.l - PAD.r, ph = h - PAD.t - PAD.b;
+    return { w, h, pw, ph, stepX: pw / (N - 2) };
+  };
+  const xOf = (g, i) => PAD.l + g.pw - (N - 1 - i + phase) * g.stepX;
+  const yOf = (g, ch, v) => PAD.t + g.ph * (1 - v / ch.cfg.max);
+  const val = (ch, i) => data[i][ch.key];
+
+  const draw = (ch) => {
+    const g = geom(ch); const { ctx, cfg } = ch;
+    if (!g.w) return;
+    const p = P(), line = cfg.line[p.i], area = cfg.area[p.i];
+    ctx.clearRect(0, 0, g.w, g.h);
+    ctx.font = '11px "JetBrains Mono", ui-monospace, monospace';
+    ctx.textBaseline = 'middle';
+    // recessive grid + y labels
+    cfg.ticks.forEach((t) => {
+      const y = Math.round(yOf(g, ch, t)) + 0.5;
+      ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(g.w - PAD.r, y); ctx.stroke();
+      ctx.fillStyle = p.label; ctx.textAlign = 'right';
+      ctx.fillText(String(t), PAD.l - 8, y);
+    });
+    ctx.textAlign = 'left'; ctx.fillStyle = p.label;
+    ctx.fillText('−60 s', PAD.l, g.h - 8);
+    ctx.textAlign = 'right'; ctx.fillText('now', g.w - PAD.r, g.h - 8);
+
+    // series (clipped to the plot area)
+    ctx.save();
+    ctx.beginPath(); ctx.rect(PAD.l, PAD.t - 4, g.pw, g.ph + 8); ctx.clip();
+    const pts = data.map((_, i) => [xOf(g, i), yOf(g, ch, val(ch, i))]);
+    const base = PAD.t + g.ph;
+    ctx.beginPath(); ctx.moveTo(pts[0][0], base);
+    pts.forEach(([x, y]) => ctx.lineTo(x, y));
+    ctx.lineTo(pts[N - 1][0], base); ctx.closePath();
+    ctx.fillStyle = area; ctx.fill();
+    ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.strokeStyle = line; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    // latest point marker
+    const [lx, ly] = pts[N - 1];
+    ctx.fillStyle = line; ctx.fillRect(lx - 4, ly - 4, 8, 8);
+    ctx.strokeStyle = p.ring; ctx.lineWidth = 2; ctx.strokeRect(lx - 4, ly - 4, 8, 8);
+    ctx.restore();
+
+    // hover: crosshair + tooltip
+    if (ch.hover >= 0) {
+      const i = ch.hover, x = xOf(g, i), y = yOf(g, ch, val(ch, i));
+      ctx.strokeStyle = p.cross; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, PAD.t); ctx.lineTo(Math.round(x) + 0.5, base); ctx.stroke();
+      ctx.fillStyle = line; ctx.fillRect(x - 4, y - 4, 8, 8);
+      const label = `${val(ch, i).toFixed(cfg.dec)} ${cfg.unit} · −${N - 1 - i} s`;
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      const tw = ctx.measureText(label).width + 16;
+      const tx = Math.min(Math.max(x + 10, PAD.l), g.w - PAD.r - tw);
+      const tyBox = Math.max(PAD.t, Math.min(y - 30, base - 24));
+      ctx.fillStyle = p.tipBg; ctx.fillRect(tx, tyBox, tw, 22);
+      ctx.strokeStyle = p.tipLine; ctx.strokeRect(tx + 0.5, tyBox + 0.5, tw - 1, 21);
+      ctx.fillStyle = p.tipText; ctx.textAlign = 'left'; ctx.fillText(label, tx + 8, tyBox + 11);
+    }
+  };
+  const drawAll = () => charts.forEach(draw);
+
+  const readouts = () => {
+    const last = data[N - 1];
+    const u = Math.round(last.util);
+    ui.util.textContent = String(u);
+    ui.rps.textContent = last.rps.toFixed(1);
+    ui.fill.style.transform = `scaleX(${u / 100})`;
+    ui.meter.setAttribute('aria-valuenow', String(u));
+    ui.meter.setAttribute('aria-valuetext', `${u}% (simulated)`);
+  };
+
+  /* Hover / touch: nearest point under the pointer */
+  charts.forEach((ch) => {
+    ch.c.addEventListener('pointermove', (e) => {
+      const g = geom(ch), r = ch.c.getBoundingClientRect();
+      const i = Math.round(N - 1 - phase - (PAD.l + g.pw - (e.clientX - r.left)) / g.stepX);
+      ch.hover = Math.max(0, Math.min(N - 1, i));
+      if (!running) draw(ch);
+    });
+    ch.c.addEventListener('pointerleave', () => { ch.hover = -1; if (!running) draw(ch); });
+  });
+
+  /* Loop: runs only while visible, tab shown, not paused, motion allowed */
+  let running = false, raf = 0, last = 0, visible = false, paused = false;
+  const frame = (now) => {
+    if (!last) last = now;
+    if (now - last >= TICK) {
+      data.shift(); data.push(step());
+      last = now; readouts();
+    }
+    phase = Math.min(1, (now - last) / TICK);
+    drawAll();
+    raf = requestAnimationFrame(frame);
+  };
+  const sync = () => {
+    const should = visible && !document.hidden && !paused && !mq.matches;
+    if (should && !running) { running = true; last = 0; raf = requestAnimationFrame(frame); }
+    if (!should && running) { running = false; cancelAnimationFrame(raf); phase = 0; drawAll(); }
+    root.dataset.running = String(running);
+    ui.state.textContent = mq.matches ? 'Static · reduced motion' : paused ? 'Paused' : running ? 'Live · simulated' : 'Idle';
+    ui.btn.hidden = mq.matches;
+  };
+
+  ui.btn.addEventListener('click', () => {
+    paused = !paused;
+    ui.btn.setAttribute('aria-pressed', String(paused));
+    ui.btn.textContent = paused ? 'Resume' : 'Pause';
+    sync();
+  });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; sync(); }, { threshold: 0.15 }).observe(root);
+  } else { visible = true; }
+  document.addEventListener('visibilitychange', sync);
+  mq.addEventListener('change', sync);
+  if ('ResizeObserver' in window) new ResizeObserver(() => { if (!running) drawAll(); }).observe(root);
+
+  // Repaint immediately when the site theme toggle flips html[data-theme]
+  new MutationObserver(() => drawAll()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  readouts(); drawAll(); sync();
+  // Fonts may finish loading after the first draw: redraw once they do
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!running) drawAll(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+# Uptime check for the GitHub Pages site.
+# Runs every 30 minutes; each run passes (site up) or fails (site down/slow).
+# assets/live.js reads this workflow's run history through the public GitHub API
+# to show "Uptime (last N checks)" — no commits, no secrets, read-only token.
+name: Uptime
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check site endpoints (HTTP 200 within 5s)
+        shell: bash
+        run: |
+          set -u
+          urls=(
+            "https://mnishanth23.github.io/"
+            "https://mnishanth23.github.io/blog/"
+          )
+          max_seconds=5
+          failed=0
+          {
+            echo "| URL | HTTP | Time (s) | Result |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for url in "${urls[@]}"; do
+            ok=0
+            # one retry, 10s apart, so a single dropped packet on the runner isn't recorded as downtime
+            for attempt in 1 2; do
+              out=$(curl -sS -o /dev/null -L --max-time 15 \
+                    -H 'Cache-Control: no-cache' -A 'uptime-check (github actions)' \
+                    -w '%{http_code} %{time_total}' "$url" 2>/dev/null) || true
+              code=$(echo "${out:-000 0}" | awk '{print $1}')
+              secs=$(echo "${out:-000 0}" | awk '{print $2}')
+              echo "$url attempt $attempt: HTTP $code in ${secs}s"
+              if [ "$code" = "200" ] && awk -v t="$secs" -v m="$max_seconds" 'BEGIN { exit !(t+0 <= m+0) }'; then
+                ok=1
+                break
+              fi
+              [ "$attempt" = 1 ] && sleep 10
+            done
+
+            if [ "$ok" = 1 ]; then
+              echo "| $url | $code | $secs | ok |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error title=Uptime check failed::$url returned HTTP $code in ${secs}s (need 200 within ${max_seconds}s)"
+              echo "| $url | $code | $secs | FAILED |" >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+          done
+
+          exit "$failed"

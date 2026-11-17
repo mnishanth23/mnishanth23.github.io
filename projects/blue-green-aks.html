@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Blue-green deployments on AKS — Nishanth M</title>
+<meta name="description" content="Personal project, in progress: zero-downtime blue-green releases on Azure Kubernetes Service with Terraform, ACR, Argo Rollouts, Prometheus analysis, Azure Front Door and GitHub Actions, on a free Azure account.">
+<meta name="author" content="Nishanth M">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nishanth M — DevOps / SRE">
+<meta property="og:title" content="Blue-green deployments on AKS — Nishanth M">
+<meta property="og:description" content="Personal project, in progress: zero-downtime blue-green releases on Azure Kubernetes Service with Terraform, ACR, Argo Rollouts, Prometheus analysis, Azure Front Door and GitHub Actions, on a free Azure account.">
+<meta property="og:url" content="https://mnishanth23.github.io/projects/blue-green-aks.html">
+<link rel="canonical" href="https://mnishanth23.github.io/projects/blue-green-aks.html">
+<meta property="og:image" content="https://mnishanth23.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (labels/code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../blog/assets/style.css">
+<link rel="stylesheet" href="../blog/assets/site.css">
+<link rel="stylesheet" href="assets/projects.css">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'))}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<!-- html.js gates the hidden state of scroll-reveal elements (no-JS shows everything).
+     html.vt-nav = this page was entered via a view transition, so skip the fallback fade. -->
+<script>document.documentElement.classList.add('js');addEventListener('pagereveal',function(e){if(e.viewTransition)document.documentElement.classList.add('vt-nav')});</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ SITE HEADER (identical on every page; set aria-current on the active link) ============ -->
+<header class="site-header">
+  <nav class="wrap" aria-label="Primary">
+    <a class="logo" href="../index.html" aria-label="Nishanth M — home">
+      <img src="../logo.png" alt="" width="32" height="32">
+      <span class="logo-text">Nishanth <span>M</span></span>
+    </a>
+    <ul class="nav-links" role="list">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../blog/index.html">Blog</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn btn-red btn-sm" href="../resume.pdf" download>Resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a></li>
+    </ul>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<!-- Mobile menu overlay (outside the header on purpose — see css section 04) -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul role="list">
+    <li style="--i:0"><a href="../index.html"><small>01</small>Home</a></li>
+    <li style="--i:1"><a href="../index.html#projects"><small>02</small>Projects</a></li>
+    <li style="--i:2"><a href="../blog/index.html"><small>03</small>Blog</a></li>
+    <li style="--i:3"><a href="../index.html#contact"><small>04</small>Contact</a></li>
+  </ul>
+  <div class="menu-foot">
+    <a class="btn btn-red" href="../resume.pdf" download>Download resume <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M9.5 1v10M4.5 6.5l5 5 5-5M2 15h15" stroke="currentColor" stroke-width="2"/></svg></a>
+    <span>imnishanth23@gmail.com</span>
+  </div>
+</div>
+<main id="main">
+  <article class="wrap">
+
+    <!-- BLOCK 1 · BREADCRUMB -->
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><span aria-current="page">Blue-green deployments on AKS</span></li>
+      </ol>
+    </nav>
+
+    <!-- BLOCK 2 · HERO: category eyebrow, title (view transition), summary -->
+    <header class="proj-hero">
+      <p class="eyebrow">Personal project · in progress</p>
+      <h1 style="view-transition-name: proj-title-blue-green-aks">Blue-green deployments on AKS</h1>
+      <p class="proj-summary">A personal learning project I&rsquo;ve been building since September 2026: zero-downtime blue-green releases on Azure Kubernetes Service, from scratch, on a free Azure account. The target design: Terraform provisions AKS and ACR, Argo Rollouts runs the blue-green cutover, a Prometheus analysis gate decides whether a release is promoted, Azure Front Door sits in front, and GitHub Actions drives the pipeline. I&rsquo;m working through it as a 13-phase plan, and it&rsquo;s still in progress.</p>
+
+      <!-- Hero banner: SAME markup as the card media so it morphs (proj-<slug>) -->
+      <div class="card-media proj-banner" style="view-transition-name: proj-blue-green-aks" aria-hidden="true">
+        <svg viewBox="0 0 240 120" aria-hidden="true" focusable="false">
+        <path class="g-line" stroke-dasharray="4 5" d="M112 36L74 64"/>
+        <path class="g-hot" d="M128 36l38 28"/>
+        <rect class="g-hot" x="102" y="14" width="36" height="22"/>
+        <rect class="g-box" x="38" y="64" width="72" height="40"/>
+        <rect class="g-box" x="130" y="64" width="72" height="40" style="stroke:#2ED573"/>
+        <text class="g-txt" x="74" y="89" text-anchor="middle">blue</text>
+        <text class="g-txt" x="166" y="89" text-anchor="middle">green</text>
+      </svg>
+        <span class="badge badge--progress">Personal project · in progress</span>
+        <span class="media-label">learning://blue-green-azure</span>
+      </div>
+
+      <!-- BLOCK 3 · META ROW: Role · Company · Period · Status -->
+      <dl class="meta-row">
+        <div><dt>Role</dt><dd>Design &amp; build (solo)</dd></div>
+        <div><dt>Company</dt><dd>Personal · free Azure account</dd></div>
+        <div><dt>Period</dt><dd>Sept 2026 – present</dd></div>
+        <div><dt>Status</dt><dd><span class="badge badge--progress">Personal project · in progress</span></dd></div>
+      </dl>
+    </header>
+
+    <!-- BLOCK 4 · TECH & TOOLS -->
+    <section class="detail-section tech-list" aria-labelledby="tech-h">
+      <h2 class="eyebrow" id="tech-h">Tech &amp; tools</h2>
+      <ul class="tags" role="list">
+        <li>Terraform</li><li>Azure Kubernetes Service (AKS)</li><li>Azure Container Registry (ACR)</li><li>Argo Rollouts</li><li>Prometheus analysis</li><li>Azure Front Door</li><li>GitHub Actions</li><li>Azure free account</li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 5 · MEDIA: diagram figure.
+         Two inline SVGs: --wide (desktop) and --tall (phones, ≤680px).
+         To use a real screenshot / demo video instead, replace the two <svg>
+         elements with ONE of the commented tags below . -->
+    <section class="detail-section" aria-labelledby="media-h">
+      <h2 class="eyebrow" id="media-h">Target architecture</h2>
+      <figure class="diagram">
+      <!-- REVIEW: this is the end-state design from the plan; the repo README currently lists Front Door, Prometheus analysis and the GitHub Actions pipeline as not done yet -->
+        <div class="diagram-frame">
+  <svg class="diagram-svg diagram-svg--wide" viewBox="0 0 1120 440" role="img" aria-labelledby="dg-bgw-t dg-bgw-d">
+    <title id="dg-bgw-t">Target architecture: blue-green releases on AKS</title>
+    <desc id="dg-bgw-d">GitHub Actions builds the application image and pushes it to Azure Container Registry. Inside the AKS cluster, Argo Rollouts creates a new green ReplicaSet next to the active blue one and exposes it through a preview Service. A Prometheus analysis gate checks the new version; if it passes, Argo Rollouts switches the active Service from blue to green, and if it fails the release is aborted and traffic stays on blue. Azure Front Door is the public entry point in front of the cluster. This is the target design of an in-progress learning project.</desc>
+    <defs>
+      <marker id="ah-bgw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-bgw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="584" y="16" width="516" height="410"/>
+    <text class="d-tag" x="604" y="40">AKS CLUSTER</text>
+    <g>
+      <rect class="d-box d-box--ghost" x="20" y="196" width="514" height="76"/>
+      <text class="d-tag" x="36" y="224">RELEASE FLOW</text>
+      <text class="d-sub" x="36" y="250">push → build → ACR → green → analysis → cutover</text>
+    </g>
+    <path class="d-arrow" d="M252 104H602" marker-end="url(#ah-bgw)"/>
+    <path class="d-flow" d="M252 104H594"/>
+    <text class="d-sub" x="272" y="94">production traffic</text>
+    <path class="d-arrow" d="M252 358H300" marker-end="url(#ah-bgw)"/>
+    <path class="d-flow" d="M252 358H292"/>
+    <path class="d-arrow" d="M534 358H602" marker-end="url(#ah-bgw)"/>
+    <path class="d-flow" d="M534 358H594"/>
+    <text class="d-sub" x="548" y="348">pull</text>
+    <path class="d-arrow" d="M700 310V270" marker-end="url(#ah-bgw)"/>
+    <path class="d-flow" d="M700 310V278"/>
+    <path class="d-arrow" d="M970 190V156" marker-end="url(#ah-bgw)"/>
+    <path class="d-flow" d="M970 190V164"/>
+    <path class="d-dash" d="M824 104H858" marker-end="url(#ahr-bgw)"/>
+    <text class="d-tag" x="841" y="176" text-anchor="middle">CUTOVER</text>
+    <text class="d-sub" x="988" y="176">promote</text>
+    <text class="d-sub" x="716" y="294">run analysis</text>
+    <g>
+      <rect class="d-box" x="20" y="56" width="232" height="96"/>
+      <text class="d-tag" x="238" y="78" text-anchor="end">EDGE</text>
+      <text class="d-label" x="34" y="120">Azure Front Door</text>
+      <text class="d-sub" x="34" y="139">public entry point</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="310" width="232" height="96"/>
+      <text class="d-num" x="34" y="332">01</text>
+      <text class="d-label" x="34" y="374">GitHub Actions</text>
+      <text class="d-sub" x="34" y="393">build → push → update</text>
+    </g>
+    <g>
+      <rect class="d-box" x="302" y="310" width="232" height="96"/>
+      <text class="d-num" x="316" y="332">02</text>
+      <text class="d-label" x="316" y="374">ACR</text>
+      <text class="d-sub" x="316" y="393">container registry</text>
+    </g>
+    <g>
+      <rect class="d-box" x="604" y="56" width="220" height="96"/>
+      <text class="d-tag" x="810" y="78" text-anchor="end">ACTIVE</text>
+      <text class="d-label" x="618" y="120">Blue ReplicaSet</text>
+      <text class="d-sub" x="618" y="139">stable version</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="860" y="56" width="220" height="96"/>
+      <text class="d-num" x="874" y="78">03</text><text class="d-tag" x="1066" y="78" text-anchor="end">PREVIEW</text>
+      <text class="d-label" x="874" y="120">Green ReplicaSet</text>
+      <text class="d-sub" x="874" y="139">new release</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="604" y="192" width="476" height="76"/>
+      <text class="d-num" x="618" y="214">04</text><text class="d-tag" x="1066" y="214" text-anchor="end">GATE</text>
+      <text class="d-label" x="618" y="236">Prometheus analysis</text>
+      <text class="d-sub" x="618" y="255">promote or roll back on metrics</text>
+    </g>
+    <g>
+      <rect class="d-box" x="604" y="310" width="476" height="96"/>
+      <text class="d-tag" x="1066" y="332" text-anchor="end">CONTROLLER</text>
+      <text class="d-label" x="618" y="374">Argo Rollouts</text>
+      <text class="d-sub" x="618" y="393">switches the active Service blue → green</text>
+    </g>
+  </svg>
+  <svg class="diagram-svg diagram-svg--tall" viewBox="0 0 360 834" role="img" aria-labelledby="dg-bgt-t dg-bgt-d">
+    <title id="dg-bgt-t">Target architecture: blue-green releases on AKS</title>
+    <desc id="dg-bgt-d">GitHub Actions builds the application image and pushes it to Azure Container Registry. Inside the AKS cluster, Argo Rollouts creates a new green ReplicaSet next to the active blue one and exposes it through a preview Service. A Prometheus analysis gate checks the new version; if it passes, Argo Rollouts switches the active Service from blue to green, and if it fails the release is aborted and traffic stays on blue. Azure Front Door is the public entry point in front of the cluster. This is the target design of an in-progress learning project.</desc>
+    <defs>
+      <marker id="ah-bgt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0 0L10 5L0 10z"/></marker>
+      <marker id="ahr-bgt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head--accent" d="M0 0L10 5L0 10z"/></marker>
+    </defs>
+    <rect class="d-box d-box--ghost" x="10" y="230" width="340" height="476"/>
+    <text class="d-tag" x="336" y="252" text-anchor="end">AKS CLUSTER</text>
+    <path class="d-arrow" d="M60 90V124" marker-end="url(#ah-bgt)"/>
+    <path class="d-flow" d="M60 90V116"/>
+    <path class="d-arrow" d="M60 206V260" marker-end="url(#ah-bgt)"/>
+    <path class="d-flow" d="M60 206V252"/>
+    <path class="d-arrow" d="M60 342V376" marker-end="url(#ah-bgt)"/>
+    <path class="d-flow" d="M60 342V368"/>
+    <path class="d-arrow" d="M60 458V492" marker-end="url(#ah-bgt)"/>
+    <path class="d-flow" d="M60 458V484"/>
+    <path class="d-arrow" d="M60 574V608" marker-end="url(#ah-bgt)"/>
+    <path class="d-flow" d="M60 574V600"/>
+    <path class="d-arrow" d="M60 690V738" marker-end="url(#ah-bgt)"/>
+    <path class="d-flow" d="M60 690V730"/>
+    <g>
+      <rect class="d-box" x="20" y="10" width="300" height="80"/>
+      <text class="d-num" x="34" y="32">01</text>
+      <text class="d-label" x="34" y="58">GitHub Actions</text>
+      <text class="d-sub" x="34" y="77">build → push → update image</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="126" width="300" height="80"/>
+      <text class="d-num" x="34" y="148">02</text>
+      <text class="d-label" x="34" y="174">ACR</text>
+      <text class="d-sub" x="34" y="193">container registry</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="262" width="300" height="80"/>
+      <text class="d-num" x="34" y="284">03</text><text class="d-tag" x="306" y="284" text-anchor="end">CONTROLLER</text>
+      <text class="d-label" x="34" y="310">Argo Rollouts</text>
+      <text class="d-sub" x="34" y="329">starts green next to blue</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--ok" x="20" y="378" width="300" height="80"/>
+      <text class="d-num" x="34" y="400">04</text><text class="d-tag" x="306" y="400" text-anchor="end">PREVIEW</text>
+      <text class="d-label" x="34" y="426">Green ReplicaSet</text>
+      <text class="d-sub" x="34" y="445">new release on preview Service</text>
+    </g>
+    <g>
+      <rect class="d-box d-box--accent" x="20" y="494" width="300" height="80"/>
+      <text class="d-num" x="34" y="516">05</text><text class="d-tag" x="306" y="516" text-anchor="end">GATE</text>
+      <text class="d-label" x="34" y="542">Prometheus analysis</text>
+      <text class="d-sub" x="34" y="561">pass → promote · fail → abort</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="610" width="300" height="80"/>
+      <text class="d-num" x="34" y="632">06</text><text class="d-tag" x="306" y="632" text-anchor="end">BLUE KEPT</text>
+      <text class="d-label" x="34" y="658">Cutover</text>
+      <text class="d-sub" x="34" y="677">active Service → green</text>
+    </g>
+    <g>
+      <rect class="d-box" x="20" y="740" width="300" height="80"/>
+      <text class="d-num" x="34" y="762">07</text><text class="d-tag" x="306" y="762" text-anchor="end">EDGE</text>
+      <text class="d-label" x="34" y="788">Azure Front Door</text>
+      <text class="d-sub" x="34" y="807">users reach the active version</text>
+    </g>
+  </svg>
+          <!-- <img src="../assets/screens/blue-green-aks-01.webp" alt="Argo Rollouts dashboard showing the blue and green ReplicaSets during a release" width="1600" height="900" loading="lazy" decoding="async"> -->
+          <!-- <video src="../assets/screens/blue-green-aks-demo.mp4" poster="../assets/screens/blue-green-aks-poster.webp" controls muted playsinline preload="none" width="1600" height="900"></video> -->
+        </div>
+        <figcaption><strong>Diagram — target design, not finished</strong><span>Learning project · some parts still planned</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- BLOCK 5b · PLAN: 13-phase progress track (learning project only) -->
+    <section class="detail-section" aria-labelledby="plan-h">
+      <p class="eyebrow">Plan</p>
+      <h2 class="h2" id="plan-h" style="margin:.4em 0 20px">13 phases, one at a time</h2>
+      <aside class="callout" style="max-width:70ch">
+        <span class="callout-k">Personal project · in progress</span>
+        <p>This is something I&rsquo;m building to learn, not production work. I&rsquo;m working through it as a 13-phase plan, and the <a href="https://github.com/mnishanth23/blue-green-azure" rel="noopener" style="color:var(--text);text-decoration-color:var(--red-hi);text-underline-offset:3px">repository</a> is where progress is tracked. The track below shows the shape of the plan; it doesn&rsquo;t mark phases as done.</p>
+      </aside>
+      <!-- TODO: fill in the 13 phase names from the repo. Source checked 2026-10-15:
+           https://raw.githubusercontent.com/mnishanth23/blue-green-azure/main/README.md
+           The README has a "Roadmap" checklist (10 unique items, one line duplicated), not a 13-phase list,
+           so the names below are placeholders. Don't mark phases done here unless the owner confirms. -->
+      <ol class="phase-track" role="list" aria-label="Project plan: 13 phases (names to be added)">
+          <li><span class="phase-n">Phase 01</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 02</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 03</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 04</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 05</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 06</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 07</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 08</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 09</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 10</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 11</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 12</span><span class="phase-t">Phase name to come</span></li>
+          <li><span class="phase-n">Phase 13</span><span class="phase-t">Phase name to come</span></li>
+      </ol>
+      <p class="phase-note">Phase names are placeholders until I publish the plan in the repo.</p>
+    </section>
+
+    <!-- BLOCK 6 · THE PROBLEM -->
+    <section class="detail-section" aria-labelledby="problem-h">
+      <p class="eyebrow">01</p>
+      <div class="prose">
+        <h2 id="problem-h" style="margin-top:.4em">The problem</h2>
+        <p>A plain rolling update replaces the old version gradually. For a while, both versions serve real users, and if the new one is bad, &ldquo;rolling back&rdquo; is just another rollout that takes time. Blue-green avoids that: the new version starts <em>next to</em> the old one, gets checked while users stay on the old one, and traffic moves across in a single switch. The old version stays up, so going back is one switch, too.</p>
+        <p>My day job is shipping containers through CI pipelines (see <a href="drone-pipeline-hardening.html">Drone CI pipeline hardening</a>). I wanted to learn the same release discipline on a managed Kubernetes platform, end to end, and own every piece of it myself: the infrastructure code, the registry, the rollout controller, the metrics gate, the edge and the pipeline.</p>
+        <p>The constraint is part of the exercise: a <strong>free Azure account</strong>. Quota and cost are real limits, so the design has to be cheap to run and easy to tear down and rebuild.</p>
+      </div>
+    </section>
+
+    <!-- BLOCK 7 · WHAT I DID -->
+    <section class="detail-section" aria-labelledby="did-h">
+      <p class="eyebrow">02</p>
+      <div class="prose">
+        <h2 id="did-h" style="margin-top:.4em">What I&rsquo;m doing</h2>
+        <ol>
+          <li><strong>Infrastructure as code with Terraform</strong>: the AKS cluster, the Azure Container Registry and the permission that lets the cluster pull from it, all defined in code.</li>
+          <li><strong>Blue-green with Argo Rollouts</strong>: the new version runs as a separate ReplicaSet behind a preview Service while the active Service keeps serving the current one.</li>
+          <li><strong>A Prometheus analysis gate</strong>: promotion depends on metrics from the new version, not on someone eyeballing a dashboard.</li>
+          <li><strong>Azure Front Door in front</strong>, so users always hit one stable entry point while the cutover happens behind it.</li>
+          <li><strong>A GitHub Actions pipeline</strong> that builds the image, pushes it to ACR and updates the Rollout.</li>
+          <li><strong>Working in 13 phases</strong> and writing down what I learn in the repo as I go.</li>
+        </ol>
+        <!-- Source for items 1, 2 and 5: the repo README (architecture, stack and roadmap sections), checked 2026-10-15 -->
+      </div>
+    </section>
+
+    <!-- BLOCK 8 · HOW IT WORKS (technical depth; practice, not invented numbers) -->
+    <section class="detail-section" aria-labelledby="how-h">
+      <p class="eyebrow">03</p>
+      <div class="prose">
+        <h2 id="how-h" style="margin-top:.4em">How it works</h2>
+        <h3>Two versions, two Services</h3>
+        <p>Argo Rollouts replaces the usual Deployment with a <code>Rollout</code> resource. With the <code>blueGreen</code> strategy, a new image creates a second ReplicaSet (green) alongside the current one (blue). The <strong>active</strong> Service keeps pointing at blue; the <strong>preview</strong> Service points at green, so the new version can be tested without any user seeing it. Promotion changes the active Service&rsquo;s selector to green, so the entry point never changes. Blue is kept for a short delay before it scales down, which makes rollback a selector switch rather than a redeploy.</p>
+        <!-- Source: repo README architecture section (active/preview Services, selector swap, scale-down delay) -->
+
+        <figure class="code">
+          <figcaption class="code-head"><span class="label">rollout.yaml — simplified example</span></figcaption>
+<pre><code><span class="c"># Simplified example: illustrates the pattern, not copied from the repo</span>
+<span class="k">apiVersion</span>: <span class="s">argoproj.io/v1alpha1</span>
+<span class="k">kind</span>: <span class="s">Rollout</span>
+<span class="k">spec</span>:
+  <span class="k">strategy</span>:
+    <span class="k">blueGreen</span>:
+      <span class="k">activeService</span>: <span class="s">app-active</span>     <span class="c"># what users hit</span>
+      <span class="k">previewService</span>: <span class="s">app-preview</span>   <span class="c"># the new version, private</span>
+      <span class="k">autoPromotionEnabled</span>: <span class="s">false</span>
+      <span class="k">prePromotionAnalysis</span>:        <span class="c"># the Prometheus gate</span>
+        <span class="k">templates</span>:
+          - <span class="k">templateName</span>: <span class="s">success-rate</span></code></pre>
+        </figure>
+        <!-- REVIEW: snippet is illustrative; replace with the real Rollout from k8s/ once the analysis phase is done -->
+
+        <h3>The gate: Prometheus decides, not a person</h3>
+        <p>An Argo Rollouts <code>AnalysisTemplate</code> runs a Prometheus query against the green version before promotion, for example its error rate or success rate over a short window. If the result meets the condition, the Rollout is promoted; if it doesn&rsquo;t, the Rollout is aborted and traffic never leaves blue. That turns &ldquo;looks fine to me&rdquo; into a rule that runs on every release.</p>
+        <!-- REVIEW: which metric and threshold the analysis will use is not decided/stated yet -->
+
+        <h3>The edge: Azure Front Door</h3>
+        <p>Front Door is the single public entry point. The blue-green switch happens inside the cluster at the Service level, so the edge configuration doesn&rsquo;t change during a release.</p>
+
+        <h3>The pipeline: GitHub Actions → ACR → Rollout</h3>
+        <p>On a push, GitHub Actions builds the image, pushes it to ACR with a version tag, and updates the image in the Rollout. That update is what starts a new blue-green release. The cluster pulls from ACR using its own identity, so no registry password is stored in the cluster.</p>
+        <!-- Source: README roadmap ("build → push to ACR → update Rollout image") and stack table (AcrPull role on the kubelet identity) -->
+
+        <aside class="callout">
+          <span class="callout-k">Free account, real limits</span>
+          <p>Because it runs on a free account, the cluster only exists while I&rsquo;m working on it: Terraform removes it at the end of a session and rebuilds it at the start of the next, while the registry and its images stay. Infrastructure as code isn&rsquo;t a nice-to-have here; it&rsquo;s what makes that routine cheap.</p>
+          <!-- Source: README "Cost control" section -->
+        </aside>
+      </div>
+    </section>
+
+    <!-- BLOCK 9 · RESULTS (only real, verified outcomes) -->
+    <section class="detail-section" aria-labelledby="results-h">
+      <p class="eyebrow">04</p>
+      <h2 class="h2" id="results-h" style="margin-bottom:24px">Results</h2>
+      <aside class="callout" style="max-width:70ch">
+        <span class="callout-k">Personal project · in progress</span>
+        <p>This project isn&rsquo;t finished, so I&rsquo;m not claiming results yet. When the plan is complete, this section will show what the releases actually did, with the evidence in the repo.</p>
+        <!-- TODO: add results (with evidence links) once phases are complete -->
+      </aside>
+    </section>
+
+    <!-- BLOCK 10 · WHAT I'D DO NEXT -->
+    <section class="detail-section" aria-labelledby="next-h">
+      <p class="eyebrow">05</p>
+      <div class="prose">
+        <h2 id="next-h" style="margin-top:.4em">What I&rsquo;d do next</h2>
+        <ul>
+          <li>Finish the 13 phases, then write up what was harder than expected in a blog post.</li>
+          <li>Handle database changes safely during blue-green, with the expand/contract pattern so both versions can run against the same schema.</li>
+          <li>Run the same app with a canary strategy and the same Prometheus analysis, and compare the two.</li>
+          <li>Record each release&rsquo;s analysis results, so a rollback always comes with a reason.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BLOCK 11 · LINKS -->
+    <section class="detail-section" aria-labelledby="links-h">
+      <h2 class="eyebrow" id="links-h">Links</h2>
+      <ul class="link-block" role="list">
+        <li><span class="k">Repository</span><a href="https://github.com/mnishanth23/blue-green-azure" rel="noopener">mnishanth23/blue-green-azure on GitHub ↗</a></li>
+        <li><span class="k">About</span><span>Zero-downtime blue-green deployments on AKS with Terraform and Argo Rollouts</span></li>
+        <li><span class="k">Related</span><a href="drone-pipeline-hardening.html">Drone CI pipeline hardening (work project)</a></li>
+        <li><span class="k">Status</span><span>Personal project · in progress — not production work</span></li>
+      </ul>
+    </section>
+
+    <!-- BLOCK 12 · PREV / NEXT (order = homepage Projects section) -->
+    <nav class="pager" aria-label="More projects">
+      <span></span>
+      <a class="next" href="drone-pipeline-hardening.html"><span class="k">Next project <span class="arr" aria-hidden="true">→</span></span><span class="t">Drone CI pipeline hardening</span></a>
+    </nav>
+
+    <!-- BLOCK 13 · CTA -->
+    <aside class="cta-band" aria-labelledby="cta-h">
+      <div>
+        <h2 id="cta-h">Learning in public, one phase at a time.</h2>
+        <p>Happy to compare notes on progressive delivery, or talk about how I&rsquo;d bring this to your team.</p>
+      </div>
+      <a class="btn btn-red" href="../index.html#contact">Get in touch <svg viewBox="0 0 19 16" fill="none" aria-hidden="true"><path d="M1 8h16M10 1l7 7-7 7" stroke="currentColor" stroke-width="2"/></svg></a>
+    </aside>
+
+  </article>
+</main>
+
+<!-- ============ SITE FOOTER (identical on every page) ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-name">Nishanth <span>M</span></p>
+        <p class="foot-role">DevOps Engineer | SRE</p>
+      </div>
+      <div class="foot-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="../index.html#projects">Projects</a></li>
+          <li><a href="../blog/index.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+          <li><a href="../resume.pdf" download>Resume (PDF)</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h2>Elsewhere</h2>
+        <ul>
+          <li><a href="https://github.com/mnishanth23" rel="noopener">GitHub</a></li>
+          <!-- REVIEW: LinkedIn URL not confirmed in latest resume -->
+          <li><a href="https://linkedin.com/in/mnishanth23" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:imnishanth23@gmail.com">imnishanth23@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 Nishanth M</span>
+      <span>Static site · no trackers</span>
+    </div>
+  </div>
+</footer>
+<script src="../blog/assets/main.js" defer></script>
+<script src="../blog/assets/site.js"></script>
+</body>
+</html>
