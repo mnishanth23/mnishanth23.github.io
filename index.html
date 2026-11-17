@@ -26,7 +26,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 <style>
   :root {
     --bg: #000;
@@ -2144,8 +2145,7 @@
       started = true;
       requestAnimationFrame(runIntro);
     }
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(startIntro);
-    setTimeout(startIntro, 1000);
+    startIntro();   // don't wait for web fonts: text swaps in when they arrive
 
     /* ---------- Scroll reveal ---------- */
     var revealEls = document.querySelectorAll('.reveal');
@@ -2377,19 +2377,28 @@
 
     /* ---------- Decide whether to go 3D ---------- */
     if (reduceMotion) return;
-    var probe = document.createElement('canvas');
-    var gl = null;
-    try { gl = probe.getContext('webgl') || probe.getContext('experimental-webgl'); } catch (e) { gl = null; }
-    if (!gl) return;
-    var lose = gl.getExtension('WEBGL_lose_context');
-    if (lose) lose.loseContext();
 
-    var lib = document.createElement('script');
-    lib.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-    lib.async = true;
-    lib.crossOrigin = 'anonymous';
-    lib.onload = function () { try { init3D(); } catch (e) { teardown(); if (window.console) console.warn('rack3d disabled:', e); } };
-    document.head.appendChild(lib);
+    // Load the 3D scene after the page is up and the hero intro has played, so it never
+    // competes with first paint; then build it when the browser is idle.
+    function load3D() {
+      // WebGL check happens here (deferred), not during page parse
+      var probe = document.createElement('canvas'), gl = null;
+      try { gl = probe.getContext('webgl') || probe.getContext('experimental-webgl'); } catch (e) { gl = null; }
+      if (!gl) return;
+      var lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+      var lib = document.createElement('script');
+      lib.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      lib.async = true;
+      lib.crossOrigin = 'anonymous';
+      lib.onload = function () {
+        var go = function () { try { init3D(); } catch (e) { teardown(); if (window.console) console.warn('rack3d disabled:', e); } };
+        if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 800 }); else setTimeout(go, 50);
+      };
+      document.head.appendChild(lib);
+    }
+    function after(ms) { setTimeout(load3D, ms); }
+    if (document.readyState === 'complete') after(1200); else window.addEventListener('load', function () { after(1200); });
 
     var canvas, shade;
     function teardown() {
@@ -2452,7 +2461,7 @@
         light: { g0: '#e4e8ee', g1: '#d6dbe3', g2: '#c6ccd6', top: '#f4f6f9', bot: '#8d95a3', ear: '#c9ced7', screw: '#6f7785', handle: '#7f8795', vent: '#7d8594', bay: '#aab1bd', bayHi: '#e9ecf1', led: '#bcc2cc', label: '#14161c', node: '#6a6f7c', num: '#8a8f9b' }
       };
       function drawFace(cnv, u, label, num) {
-        var c = cnv.getContext('2d'), w = cnv.width, h = cnv.height, P = FACE[isLight() ? 'light' : 'dark'];
+        var k = cnv._k || 1, c = cnv.getContext('2d'), w = cnv.width * k, h = cnv.height * k, P = FACE[isLight() ? 'light' : 'dark'];   // k: drawn at half size, in full-size units
         c.clearRect(0, 0, w, h);
         var g = c.createLinearGradient(0, 0, 0, h);
         g.addColorStop(0, P.g0); g.addColorStop(0.5, P.g1); g.addColorStop(1, P.g2);
@@ -2577,7 +2586,7 @@
           faceMat = faceCache[key];
         } else {
           var fc = document.createElement('canvas');
-          fc.width = 1024; fc.height = Math.round(1024 * h / UNIT_W);
+          fc.width = 512; fc.height = Math.round(512 * h / UNIT_W); fc._k = 2; fc.getContext('2d').scale(0.5, 0.5);
           var num = label ? ('0' + (LABELS.indexOf(label) + 1) + ' / U' + (Math.round((cursor + innerH / 2) / U) + 1)) : ('srv-' + (10 + unitNo));
           drawFace(fc, u, label, num);
           var t = tex(fc);
