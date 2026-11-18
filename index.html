@@ -1725,6 +1725,21 @@
     box-shadow: 0 0 10px rgba(255, 59, 60, 0.7); animation: ld-blink 0.85s steps(1) infinite; }
   @keyframes ld-blink { 50% { opacity: 0; } }
   #loader .ld-slot { align-self: stretch; height: 2px; margin-top: 1.1em; }   /* where the pipeline line comes to rest */
+  /* ending: the line pulls into its centre and becomes the DevOps ∞ loop, then we fly through it */
+  #loader .ld-inf { position: fixed; width: min(42vw, 400px); aspect-ratio: 2 / 1; transform: translate(-50%, -50%); pointer-events: none; z-index: 5; }
+  #loader .ld-inf svg { position: absolute; inset: -50% 0; width: 100%; height: 200%; overflow: visible; }
+  #loader .ld-inf path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  /* a solid chrome tube: dark rim → steel body → bright core → thin specular highlight, plus a floor shadow */
+  #loader .ld-inf .sh { stroke: #000; stroke-width: 3.4; opacity: .55; filter: blur(1.1px); transform: translateY(1.6px); }
+  #loader .ld-inf .rim { stroke: #2b2e36; stroke-width: 2.7; }
+  #loader .ld-inf .body { stroke: url(#ldChrome); stroke-width: 2.25; }
+  #loader .ld-inf .core { stroke: url(#ldChromeCore); stroke-width: 1.05; opacity: .9; }
+  #loader .ld-inf .spec { stroke: #fff; stroke-width: .32; opacity: .85; transform: translateY(-.55px); }
+  #loader .ld-inf .glint { mix-blend-mode: screen; }
+  #loader .ld-inf .flow { fill: none; stroke: #fff; stroke-width: .8; stroke-linecap: round; stroke-dasharray: 7 93; opacity: 0;
+    filter: drop-shadow(0 0 .35px #fff) drop-shadow(0 0 .9px rgba(255, 70, 70, .9)); }
+  #loader .ld-inf .flow2 { stroke-width: .55; stroke-dasharray: 4 96; filter: drop-shadow(0 0 .5px rgba(255, 255, 255, .9)); }
+  #loader .ld-inf { filter: drop-shadow(0 0 18px rgba(220, 224, 235, 0.28)) drop-shadow(0 0 46px rgba(255, 59, 60, 0.12)); opacity: 0; }
 
   /* ---- exit: curtain opening from the line ---- */
   #loader.splitting { background: transparent; }
@@ -1821,8 +1836,11 @@
       holdName: 350,                 // NISHANTH fully on screen
       scramble: 800,                 // NISHANTH → PORTFOLIO
       subIn: 100, subChar: 45,       // relative to scramble end; typed one character at a time
-      holdTitle: 280,                // PORTFOLIO + DevOps Engineer on screen before the curtain
-      exit: 800,                     // curtain opens from the line
+      holdTitle: 250,                // PORTFOLIO + DevOps Engineer on screen before the line turns into ∞
+      titleOut: 450,                 // PORTFOLIO + DevOps Engineer fade away before the ∞ appears
+      morph: 1300,                   // a tiny chrome ring (the dot) grows and liquid-morphs into the ∞
+      infRun: 1000,                  // a light glint sweeps across the chrome
+      exit: 900,                     // fly through the loop: it zooms past while the black fades
       hardStop: 11000
     };
     var STAGES = [
@@ -1839,7 +1857,8 @@
     var SCR_AT = LETTERS_END + T.holdName, SCR_END = SCR_AT + T.scramble;
     var SUB_AT = SCR_END + T.subIn;
     var SUB_END = SUB_AT + (sub.textContent.length + 1) * (T.subChar + 15) + 60;   // + average jitter and the space pause
-    var FINISH_AT = SUB_END + T.holdTitle;
+    var INF_AT = SUB_END + T.holdTitle;
+    var FINISH_AT = INF_AT + T.titleOut + T.morph + T.infRun;
     function ms(v) { return Math.round(v * TEMPO); }
     var anims = [], timers = [], done = false, settled = false;
     function a(node, kf, o) { var x = node.animate(kf, Object.assign({ fill: 'forwards' }, o)); anims.push(x); return x; }
@@ -1940,6 +1959,7 @@
       var r = center(rail), t = center(slot), sx = t.w / r.w;
       a(rail, [{ transform: 'none' }, { transform: 'translate(' + (t.x - r.x) + 'px,' + (t.y - r.y) + 'px) scaleX(' + sx + ')' }], { duration: ms(T.collapse + 250), delay: ms(120), easing: 'cubic-bezier(.65,0,.25,1)' });
       at(ms(T.collapse + 370), function () { settled = true; });
+      a(pipe, [{ opacity: 1 }, { opacity: 0 }], { duration: ms(T.collapse), delay: ms(T.collapse * 0.6), easing: 'ease-out' });   // no line under the title
     });
 
     // 5. scramble NISHANTH → PORTFOLIO (fixed-step timer, letters lock in left to right)
@@ -1972,28 +1992,158 @@
         if (k < text.length) at(ms(T.subChar + (text.charAt(k) === ' ' ? 60 : Math.random() * 30)), type);
       })();
     });
+    // 6. the title fades away; a solid chrome DevOps ∞ fades in alone in the centre, then a light glint sweeps across it
+    var INF_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
+        '<linearGradient id="ldChrome" gradientUnits="userSpaceOnUse" x1="0" y1="7" x2="0" y2="17">' +
+        '<stop offset="0" stop-color="#f7f8fb"/><stop offset=".3" stop-color="#c9ccd4"/><stop offset=".52" stop-color="#6f737e"/><stop offset=".7" stop-color="#d6d9e0"/><stop offset="1" stop-color="#8d919c"/></linearGradient>' +
+        '<linearGradient id="ldChromeCore" gradientUnits="userSpaceOnUse" x1="2" y1="0" x2="22" y2="0">' +
+        '<stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity=".55"/></linearGradient>' +
+        '<linearGradient id="ldGlint" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+        '<mask id="ldTube" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><path d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z" fill="none" stroke="#fff" stroke-width="2.25" stroke-linecap="round"/></mask></defs>' +
+        '<path class="sh" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><path class="rim" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><path class="body" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><path class="core" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><path class="spec" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/>' +
+        '<g mask="url(#ldTube)"><path class="flow" pathLength="100" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><path class="flow flow2" pathLength="100" d="M12 12c-2-2.7-3.6-4-5.5-4A4 4 0 0 0 2.5 12a4 4 0 0 0 4 4c1.9 0 3.5-1.3 5.5-4s3.6-4 5.5-4a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-1.9 0-3.5-1.3-5.5-4z"/><rect class="glint" x="-6" y="4" width="5" height="16" fill="url(#ldGlint)" transform="skewX(-20)"/></g></svg>';
+    var inf = null;
+    at(ms(INF_AT), function () {
+      inf = document.createElement('div'); inf.className = 'ld-inf';
+      inf.style.left = innerWidth / 2 + 'px'; inf.style.top = innerHeight / 2 + 'px';   // alone, centre of the screen
+      inf.innerHTML = INF_SVG;
+      el.appendChild(inf);
+      // the title and subtitle fade away first, so the loop draws on an empty screen
+      a(stack, [{ opacity: 1, scale: '1', filter: 'none' }, { opacity: 0, scale: '0.96', filter: 'blur(5px)' }], { duration: ms(T.titleOut), easing: 'ease-in' });
+      // 6a. particle assemble: hundreds of tiny silver motes drift in from every side, gather along the ∞ outline,
+      //     then fuse into the solid chrome loop (motes fade as the chrome fades in; a brief soft flash at the fuse)
+      (function () {
+        var body = inf.querySelector('svg .body'), BL = body.getTotalLength(), M = body.getScreenCTM();
+        var W = innerWidth, H = innerHeight, DPR = Math.min(2, window.devicePixelRatio || 1);
+        var S = Math.hypot(M.a, M.b);                                   // screen px per svg unit
+        var cx = W / 2, cy = H / 2, R0 = Math.hypot(W, H) * 0.5;
+        function scr(x, y) { return [M.a * x + M.c * y + M.e, M.b * x + M.d * y + M.f]; }
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+        cv.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;z-index:4;pointer-events:none';
+        el.appendChild(cv);
+        var g = cv.getContext('2d');
+        function sprite(halo) {                                          // soft glowing mote: hot white core + coloured halo
+          var c = document.createElement('canvas'); c.width = c.height = 32;
+          var x = c.getContext('2d'), rg = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+          rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(0.18, 'rgba(250,251,255,.95)');
+          rg.addColorStop(0.42, halo); rg.addColorStop(1, 'rgba(0,0,0,0)');
+          x.fillStyle = rg; x.fillRect(0, 0, 32, 32); return c;
+        }
+        var SIL = sprite('rgba(196,202,218,.32)'), RED = sprite('rgba(255,70,70,.3)');
+        // targets: evenly spread along the tube, scattered across its width
+        var n = W < 700 ? 300 : 520, P = [];
+        for (var i = 0; i < n; i++) {
+          var s = (i + Math.random()) / n * BL, p0 = body.getPointAtLength(s), p1 = body.getPointAtLength(Math.min(BL, s + 0.05));
+          var tx = p1.x - p0.x, ty = p1.y - p0.y, tl = Math.hypot(tx, ty) || 1;
+          var off = (Math.random() + Math.random() - 1) * 1.15;            // across the tube (svg units, tube is 2.25 wide)
+          var T0 = scr(p0.x, p0.y), Nn = [-ty / tl * S, tx / tl * S];      // target + screen-space normal (px per unit)
+          var ang = Math.atan2(T0[1] - cy, T0[0] - cx) + (Math.random() - 0.5) * 2.2;   // arrive roughly from its own side
+          var rr = R0 * (1.02 + Math.random() * 0.45);
+          var sx = cx + Math.cos(ang) * rr, sy = cy + Math.sin(ang) * rr;
+          var mx = (sx + T0[0]) / 2, my = (sy + T0[1]) / 2, dx = T0[0] - sx, dy = T0[1] - sy, swirl = (Math.random() - 0.3) * 0.55;
+          P.push({ sx: sx, sy: sy, kx: mx - dy * swirl, ky: my + dx * swirl,     // curved (quadratic) flight path
+                   tx: T0[0], ty: T0[1], nx: Nn[0], ny: Nn[1], off: off,
+                   d: Math.random() * 0.3 + 0.1 * (s / BL), dur: 0.55 + Math.random() * 0.15,
+                   r: (1 + Math.random() * 1.7) * (W < 700 ? 0.85 : 1), a: 0.55 + Math.random() * 0.45,
+                   ph: Math.random() * 6.28, red: Math.random() < 0.08 });
+        }
+        var path = new Path2D(body.getAttribute('d'));
+        // timeline (ms from the start of this phase): motes start while the title fades, gather, then fuse
+        var P0 = ms(T.titleOut * 0.45), GATHER = ms(T.titleOut + T.morph * 0.52) - P0;
+        var FUSE = ms(T.titleOut + T.morph * 0.6), FADE = ms(T.morph * 0.34), END = ms(T.titleOut + T.morph);
+        var t0 = performance.now(), gone = false;
+        function kill() { if (!gone) { gone = true; cv.remove(); } }
+        at(FUSE - ms(40), function () {
+          a(inf, [{ opacity: 0, filter: 'blur(2px) brightness(1.5) drop-shadow(0 0 0 transparent)' },
+                  { opacity: 1, filter: 'blur(0px) brightness(1.12) drop-shadow(0 0 22px rgba(235,238,248,.4))', offset: .55 },
+                  { opacity: 1, filter: 'blur(0px) brightness(1) drop-shadow(0 0 18px rgba(220,224,235,.28))' }],
+            { duration: ms(T.morph * 0.4), easing: 'ease-out' });
+        });
+        at(END, kill);
+        function ease(u) { return 1 - Math.pow(1 - u, 3.2); }
+        (function frame() {
+          if (done || gone) { kill(); return; }
+          var t = performance.now() - t0;
+          g.setTransform(DPR, 0, 0, DPR, 0, 0); g.clearRect(0, 0, W, H);
+          g.globalCompositeOperation = 'lighter';
+          var fz = Math.max(0, Math.min(1, (t - FUSE) / FADE));            // 0 → 1 as the motes melt into the chrome
+          var fzE = fz * fz * (3 - 2 * fz), gt = (t - P0) / GATHER;
+          for (var k = 0; k < P.length; k++) {
+            var p = P[k], u = (gt - p.d) / p.dur;
+            if (u <= 0) continue; if (u > 1) u = 1;
+            var e = ease(u), o = p.off * (1 - fzE * 0.85);
+            var ex = p.tx + p.nx * o, ey = p.ty + p.ny * o;
+            if (u >= 1) { var w = Math.sin(t * 0.009 + p.ph) * 0.5 * (1 - fzE); ex += p.ny * 0.04 * w; ey -= p.nx * 0.04 * w; }
+            var q = 1 - e, x = q * q * p.sx + 2 * q * e * p.kx + e * e * ex, y = q * q * p.sy + 2 * q * e * p.ky + e * e * ey;
+            var al = p.a * Math.min(1, u * 5) * (1 - fzE) * (u >= 1 ? 0.85 + 0.15 * Math.sin(t * 0.02 + p.ph) : 1);
+            if (al <= 0.01) continue;
+            var sz = p.r * (1 + q * 1.4) * 2.6;
+            if (u < 0.97) {                                               // faint motion trail
+              var e2 = ease(Math.max(0, u - 0.035)), q2 = 1 - e2;
+              var x2 = q2 * q2 * p.sx + 2 * q2 * e2 * p.kx + e2 * e2 * ex, y2 = q2 * q2 * p.sy + 2 * q2 * e2 * p.ky + e2 * e2 * ey;
+              g.globalAlpha = al * 0.22; g.strokeStyle = p.red ? '#ff8a8a' : '#dfe3ee'; g.lineWidth = p.r * 0.8;
+              g.beginPath(); g.moveTo(x2, y2); g.lineTo(x, y); g.stroke();
+            }
+            g.globalAlpha = al; g.drawImage(p.red ? RED : SIL, x - sz, y - sz, sz * 2, sz * 2);
+          }
+          // soft flash at the fuse: a glow hugging the loop + a faint wide bloom
+          var fl = (t - FUSE + ms(40)) / ms(380);
+          if (fl > 0 && fl < 1) {
+            var fa = Math.sin(Math.PI * Math.pow(fl, 0.6));
+            g.globalCompositeOperation = 'lighter';
+            g.setTransform(M.a * DPR, M.b * DPR, M.c * DPR, M.d * DPR, M.e * DPR, M.f * DPR);
+            g.globalAlpha = fa * 0.32; g.strokeStyle = '#fff'; g.lineWidth = 1.1; g.lineCap = 'round';
+            g.shadowColor = 'rgba(255,255,255,.8)'; g.shadowBlur = 16 * DPR; g.stroke(path);
+            g.globalAlpha = fa * 0.12; g.strokeStyle = 'rgba(255,90,90,.5)'; g.lineWidth = 1.6; g.shadowColor = 'rgba(255,60,60,.6)'; g.shadowBlur = 30 * DPR; g.stroke(path);
+            g.shadowBlur = 0;
+            g.setTransform(DPR, 0, 0, DPR, 0, 0);
+            var bw = S * 12, rg = g.createRadialGradient(cx, cy, 0, cx, cy, bw);
+            rg.addColorStop(0, 'rgba(255,255,255,.12)'); rg.addColorStop(0.5, 'rgba(225,230,245,.04)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+            g.globalAlpha = fa; g.fillStyle = rg; g.fillRect(cx - bw, cy - bw, bw * 2, bw * 2);
+          }
+          g.globalAlpha = 1;
+          if (t < END) requestAnimationFrame(frame); else kill();
+        })();
+      })();
+      at(ms(T.titleOut + T.morph), function () {
+        [['.flow:not(.flow2)', 0, 1150], ['.flow2', -50, 1150]].forEach(function (f) {
+          var el2 = inf.querySelector(f[0]);
+          el2.style.opacity = 1;
+          a(el2, [{ strokeDashoffset: f[1] }, { strokeDashoffset: f[1] - 100 }], { duration: ms(f[2]), iterations: Infinity, easing: 'linear' });
+          a(el2, [{ opacity: 0 }, { opacity: 1 }], { duration: ms(350), easing: 'ease-out', composite: 'replace' });
+        });
+      });
+      at(ms(T.titleOut + T.morph + 150), function () {
+        a(inf.querySelector('.glint'), [{ transform: 'skewX(-20deg) translateX(0px)' }, { transform: 'skewX(-20deg) translateX(34px)' }],
+          { duration: ms(T.infRun), easing: 'cubic-bezier(.45,0,.25,1)' });
+      });
+    });
     at(ms(FINISH_AT), finish);
 
-    // 6. the line under the title opens like a curtain: black halves part up / down, revealing the site
+    // 7. fly through the loop: the ∞ zooms past the camera while the black screen fades to the site
+    //    (skipped early → the same zoom from the centre of the screen)
     function finish() {
       try { sessionStorage.setItem('ldSeen', '1'); } catch (e) {}   // play once per browser session
       if (done) return; done = true;
       timers.forEach(clearTimeout);
-      var y = settled ? center(rail).y : innerHeight / 2;
-      var top = document.createElement('div'), bot = document.createElement('div'), seam = document.createElement('div');
-      top.className = bot.className = 'ld-half'; seam.className = 'ld-seam';
-      top.style.top = '0'; top.style.height = y + 'px';
-      bot.style.top = y + 'px'; bot.style.bottom = '0';
-      seam.style.top = (y - 1) + 'px';
-      el.appendChild(top); el.appendChild(bot); el.appendChild(seam);
-      el.classList.add('splitting');
-      // the title rides up with the top curtain (it sits above the line)
-      var keep = settled && sub.style.opacity === '1';
-      if (keep) { var sr = stack.getBoundingClientRect(); stack.style.left = sr.left + 'px'; stack.style.top = sr.top + 'px'; stack.style.transform = 'none'; top.appendChild(stack); }
-      [].forEach.call(el.children, function (n) { if (n !== top && n !== bot && n !== seam) n.style.visibility = 'hidden'; });
-      seam.animate([{ opacity: 1, transform: 'scaleY(1)' }, { opacity: 0.9, transform: 'scaleY(3)', offset: 0.15 }, { opacity: 0, transform: 'scaleY(8)', offset: 0.6 }, { opacity: 0, transform: 'scaleY(8)' }], { duration: ms(T.exit), easing: 'ease-out', fill: 'forwards' });
-      top.animate([{ transform: 'none' }, { transform: 'translateY(-100%)' }], { duration: ms(T.exit), delay: ms(60), easing: 'cubic-bezier(.6,0,.15,1)', fill: 'forwards' });
-      var out = bot.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: ms(T.exit), delay: ms(60), easing: 'cubic-bezier(.6,0,.15,1)', fill: 'forwards' });
+      if (!inf) {   // skipped before the loop appeared: still exit through a loop
+        inf = document.createElement('div'); inf.className = 'ld-inf';
+        inf.style.left = innerWidth / 2 + 'px'; inf.style.top = innerHeight / 2 + 'px';
+        inf.innerHTML = INF_SVG; inf.style.opacity = 1;
+        el.appendChild(inf);
+      }
+      el.style.background = 'transparent';
+      var veil = document.createElement('div');
+      veil.style.cssText = 'position:absolute;inset:0;background:#000;z-index:1';
+      el.insertBefore(veil, el.firstChild);
+      [].forEach.call(el.children, function (n) { if (n !== veil && n !== inf && n !== stack) n.style.visibility = 'hidden'; });
+      stack.style.zIndex = 4;
+      var so = +getComputedStyle(stack).opacity;   // already faded if the ∞ phase ran; only fade what is still visible
+      if (so > 0.02) a(stack, [{ opacity: so, filter: 'none' }, { opacity: 0, filter: 'blur(6px)' }], { duration: ms(T.exit * 0.55), easing: 'ease-in' });
+      a(inf, [{ transform: 'translate(-50%, -50%) scale(1)', opacity: +getComputedStyle(inf).opacity || 1 }, { transform: 'translate(-50%, -50%) scale(4)', opacity: 1, offset: 0.35 },
+              { transform: 'translate(-50%, -50%) scale(26)', opacity: 0 }], { duration: ms(T.exit), easing: 'cubic-bezier(.55,0,.75,.25)' });
+      var out = a(veil, [{ opacity: 1 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: ms(T.exit), easing: 'ease-in-out' });
       root.classList.remove('loading');
       window.__loaderActive = false;
       document.dispatchEvent(new Event('loaderdone'));
